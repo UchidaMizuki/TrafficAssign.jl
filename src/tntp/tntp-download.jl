@@ -1,5 +1,3 @@
-include("tntp-global.jl")
-
 function download_tntp(path=PATH_TNTP; overwrite=false)
   dir_tntp = joinpath(path, DIR_NAME_TNTP)
 
