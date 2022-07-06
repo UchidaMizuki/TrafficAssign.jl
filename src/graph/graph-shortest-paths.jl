@@ -1,7 +1,7 @@
 struct ShortestPaths{T<:Integer}
     parents::Vector{T}
-    function ShortestPaths(graph::Graphs.AbstractGraph, orig::T) where T<:Integer
-        shortest_paths = Graphs.dijkstra_shortest_paths(graph, orig)
+    function ShortestPaths(graph::AbstractGraph, orig::T, dist::AbstractMatrix{U}) where {T<:Integer, U<:Real}
+        shortest_paths = dijkstra_shortest_paths(graph, orig, dist)
         new{T}(shortest_paths.parents::Vector{T})
     end
 end
@@ -26,6 +26,6 @@ function (shortest_paths::ShortestPaths)(dest::T) where {T<:Integer}
         return zeros(n_nodes, n_nodes)
     else
         to = [from[2:end]; dest]
-        Matrix(SparseArrays.sparse(from, to, 1.0, n_nodes, n_nodes))
+        Matrix(sparse(from, to, 1.0, n_nodes, n_nodes))
     end
 end
