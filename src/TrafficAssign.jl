@@ -1,21 +1,31 @@
 module TrafficAssign
 
-import DataFrames
-import Graphs
-import SparseArrays
+import DataFrames: DataFrame, select
+import Graphs: SimpleGraphs.SimpleDiGraph, DiGraph, add_edge!
+import Graphs: AbstractGraph, dijkstra_shortest_paths
+import SparseArrays: SparseMatrixCSC, sparse
 import ZipFile
 
-# traffic
-include("traffic/traffic.jl")
-include("traffic/traffic-graph.jl")
-
 # tntp
+include("tntp/tntp.jl")
 include("tntp/tntp-download.jl")
 include("tntp/tntp-global.jl")
 include("tntp/tntp-load.jl")
 
-export TrafficOptions, Traffic
-export TrafficGraph
+# traffic
+include("traffic/traffic-link-performance.jl")
+include("traffic/traffic.jl")
+
+# graph
+include("graph/graph-shortest-paths.jl")
+
+export download_tntp
 export load_tntp
+export TNTPOptions, TNTP
+
+export Traffic
+export AbstractLinkPerformance, BPR
+
+export ShortestPaths
 
 end

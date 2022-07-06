@@ -7,35 +7,91 @@ struct BPR <: AbstractLinkPerformance
     alpha::Matrix{Float64}
     beta::Matrix{Float64}
 
-    toll_factor::Float64
+    toll_factor::Matrix{Float64}
     toll::Matrix{Float64}
-    
-    length_factor::Float64
+
+    length_factor::Matrix{Float64}
     length::Matrix{Float64}
-
-    function BPR(traffic::Traffic)
-        n_nodes = traffic.n_nodes
-        network = traffic.network
-        options = traffic.options
-
-        from = network.from
-        to = network.to
     
-        matrix_network = x -> Matrix(SparseArrays.sparse(from, to, x, n_nodes, n_nodes))
-
-        free_flow_time = matrix_network(network.free_flow_time)
-        capacity = matrix_network(network.capacity)
-        alpha = matrix_network(network.alpha)
-        beta = matrix_network(network.beta)
+    function BPR(
+        n_nodes::Int,
+        from::Vector{Int},
+        to::Vector{Int}; 
         
-        toll_factor = options.toll_factor
-        toll = matrix_network(network.toll)
+        free_flow_time::Vector{Float64},
+        capacity::Vector{Float64},
+        alpha::Vector{Float64},
+        beta::Vector{Float64}, 
         
-        length_factor = options.length_factor
-        length = matrix_network(network.length)
+        toll_factor::Union{Float64,Vector{Float64}},
+        toll::Vector{Float64}, 
+        
+        length_factor::Union{Float64,Vector{Float64}},
+        length::Vector{Float64}
+    )
+        matrix_network = x -> Matrix(sparse(from, to, x, n_nodes, n_nodes))
 
-        new(free_flow_time, capacity, alpha, beta, toll_factor, toll, length_factor, length)
+        free_flow_time = matrix_network(free_flow_time)
+        capacity = matrix_network(capacity)
+        alpha = matrix_network(alpha)
+        beta = matrix_network(beta)
+
+        toll_factor = matrix_network(toll_factor)
+        toll = matrix_network(toll)
+
+        length_factor = matrix_network(length_factor)
+        length = matrix_network(length)
+
+        new(
+            free_flow_time,
+            capacity,
+            alpha,
+            beta, 
+            
+            toll_factor,
+            toll, 
+            
+            length_factor,
+            length
+        )
     end
+end
+
+function BPR(tntp::TNTP)
+    n_nodes = tntp.n_nodes
+    network = tntp.network
+    options = tntp.options
+
+    from = network.from
+    to = network.to
+
+    free_flow_time = network.free_flow_time
+    capacity = network.capacity
+    alpha = network.alpha
+    beta = network.beta
+
+    toll_factor = options.toll_factor
+    toll = network.toll
+
+    length_factor = options.length_factor
+    length = network.length
+
+    BPR(
+        n_nodes,
+        from,
+        to,
+        
+        free_flow_time=free_flow_time,
+        capacity=capacity,
+        alpha=alpha,
+        beta=beta, 
+        
+        toll_factor=toll_factor,
+        toll=toll, 
+        
+        length_factor=length_factor,
+        length=length
+    )
 end
 
 function (bpr::BPR)(flow::Matrix{Float64})
