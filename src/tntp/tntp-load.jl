@@ -16,12 +16,12 @@ function load_tntp(file_trips::String, file_network::String; kwargs...)
   
     @assert n_zones_trips == n_zones_network
   
-    options = TrafficOptions(
+    options = TNTPOptions(
         first_thru_node=first_thru_node;
         kwargs...
     )
   
-    return Traffic(trips, network, options=options)
+    return TNTP(trips, network, options=options)
 end
   
 function file_tntp(network_name; path=PATH_TNTP)
@@ -106,7 +106,7 @@ function load_tntp_trips(file_trips)
             @warn "`total_od_flow` does not match total number of trips"
         end
     
-        trips = DataFrames.DataFrame(
+        trips = DataFrame(
             orig=orig,
             dest=dest,
             trips=trips
@@ -192,7 +192,7 @@ function load_tntp_network(file_network)
             @warn "The number of edges in the graph does not match the total number of edges"
         end
 
-        network = DataFrames.DataFrame(
+        network = DataFrame(
             from=from,
             to=to,
             free_flow_time=free_flow_time,
