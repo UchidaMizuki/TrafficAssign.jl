@@ -1,7 +1,7 @@
 struct ShortestPaths{T<:Integer}
     parents::Vector{T}
-    function ShortestPaths(graph::AbstractGraph, orig::T, dist::AbstractMatrix{U}) where {T<:Integer, U<:Real}
-        shortest_paths = dijkstra_shortest_paths(graph, orig, dist)
+    function ShortestPaths(graph::AbstractGraph, cost::AbstractMatrix{U}, orig::T) where {T<:Integer, U<:Real}
+        shortest_paths = dijkstra_shortest_paths(graph, orig, cost)
         new{T}(shortest_paths.parents::Vector{T})
     end
 end
