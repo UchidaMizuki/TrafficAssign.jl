@@ -1,4 +1,4 @@
-using TrafficAssign
+using UserEqm
 using Test
 
 using SparseArrays
@@ -10,12 +10,18 @@ import Graphs
 end
 
 tntp = load_tntp("Anaheim", toll_factor=1, length_factor=1)
-traffic = Traffic(tntp)
+tntp = TrafficImpl(tntp)
 
-flow = all_or_nothing(traffic, 0.0)
-flow_new = all_or_nothing(traffic, flow)
+# tntp.link_performance
+tntp.link_performance(0.)
+objective(tntp.link_performance, 0.)
 
-flow_new - flow
+# traffic = Traffic(tntp)
 
-a = sparse(1:3, 1:3, 1:3)
-b = sparse(1:3, [1, 2, 2], 1:3, 3, 3)
+# flow = all_or_nothing(traffic, 0.0)
+# flow_new = all_or_nothing(traffic, flow)
+
+# flow_new - flow
+
+# a = sparse(1:3, 1:3, 1:3)
+# b = sparse(1:3, [1, 2, 2], 1:3, 3, 3)

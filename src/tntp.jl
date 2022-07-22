@@ -1,54 +1,93 @@
+# global
+const SHA_TNTP = "ac96f2975ec13b8803e18275e7bd92c6d7bbcde5"
+const DIR_NAME_TNTP = "TransportationNetworks-$(SHA_TNTP)"
+const PATH_TNTP = dirname(@__DIR__)
+
+
+
+# download
+function download_tntp(path=PATH_TNTP; overwrite=false)
+    dir_tntp = joinpath(path, DIR_NAME_TNTP)
+
+    if !isdir(dir_tntp) || overwrite
+        file = tempname()
+        download("https://github.com/bstabler/TransportationNetworks/archive/$(SHA_TNTP).zip", file)
+
+        reader = ZipFile.Reader(file)
+
+        for file in reader.files
+            file_name = joinpath(path, file.name)
+
+            if endswith(file_name, "/")
+                if !isdir(file_name)
+                    mkdir(file_name)
+                end
+            else
+                write(file_name, read(file))
+            end
+        end
+
+        close(reader)
+        rm(file)
+    end
+
+    return dir_tntp
+end
+
+
+
+# load
 function load_tntp(network_name::String; path=PATH_TNTP, kwargs...)
     file_trips, file_network = file_tntp(network_name, path=path)
-  
+
     load_tntp(file_trips, file_network; kwargs...)
 end
-  
+
 function load_tntp(file_trips::String, file_network::String; kwargs...)
     @assert ispath(file_trips)
     @assert ispath(file_network)
-  
+
     # trips
     trips, n_zones_trips = load_tntp_trips(file_trips)
-    
+
     # network
     first_thru_node, network, n_zones_network = load_tntp_network(file_network)
-  
+
     @assert n_zones_trips == n_zones_network
-  
-    options = TNTPOptions(
+
+    options = TrafficOptions(
         first_thru_node=first_thru_node;
         kwargs...
     )
-  
-    return TNTP(trips, network, options=options)
+
+    return Traffic(trips, network, options=options)
 end
-  
+
 function file_tntp(network_name; path=PATH_TNTP)
     dir_tntp = joinpath(download_tntp(path), network_name)
-  
+
     files = readdir(dir_tntp)
     file_name_trips = files[endswith.(files, "_trips.tntp")][1]
     file_name_network = files[endswith.(files, "_net.tntp")][1]
-  
+
     file_trips = joinpath(dir_tntp, file_name_trips)
     file_network = joinpath(dir_tntp, file_name_network)
-  
+
     return file_trips, file_network
 end
-  
+
 function load_tntp_trips(file_trips)
     open(file_trips, "r") do file
         tag_n_zones = "<NUMBER OF ZONES>"
         tag_total_od_flow = "<TOTAL OD FLOW>"
         tag_end = "<END OF METADATA>"
-    
+
         n_zones = 0
         total_od_flow = 0
-    
+
         while true
             line = readline(file)
-    
+
             if startswith(line, tag_n_zones)
                 n_zones = read_tntp_tag(line, tag_n_zones)
             elseif startswith(line, tag_total_od_flow)
@@ -60,17 +99,17 @@ function load_tntp_trips(file_trips)
 
         @assert n_zones > 0
         @assert total_od_flow > 0
-    
+
         orig = Vector{Int}(undef, n_zones^2)
         dest = Vector{Int}(undef, n_zones^2)
         trips = zeros(n_zones^2)
-    
+
         idx = 0
         orig_new = 0
-    
+
         while !eof(file)
             line = readline(file)
-    
+
             if line == ""
                 continue
             else
@@ -78,10 +117,10 @@ function load_tntp_trips(file_trips)
                     orig_new = read_tntp_tag(line, "Origin")
                 else
                     line = split(line, r";\s*", keepempty=false)
-    
+
                     for dest_trips in line
                         dest_trips = split(dest_trips, ":")
-    
+
                         idx += 1
                         orig[idx] = orig_new
                         dest[idx] = parse(Int, dest_trips[1])
@@ -93,11 +132,11 @@ function load_tntp_trips(file_trips)
 
         @assert idx > 0
         @assert orig_new > 0
-    
+
         orig = orig[1:idx]
         dest = dest[1:idx]
         trips = trips[1:idx]
-        
+
         if size(unique([orig; dest]), 1) != n_zones
             @warn "Number of unique origins and destinations does not match the number of zones"
         end
@@ -105,17 +144,17 @@ function load_tntp_trips(file_trips)
         if !isapprox(sum(trips), total_od_flow)
             @warn "`total_od_flow` does not match total number of trips"
         end
-    
+
         trips = DataFrame(
             orig=orig,
             dest=dest,
             trips=trips
         )
-    
+
         return trips, n_zones
     end
 end
-  
+
 function load_tntp_network(file_network)
     open(file_network, "r") do file
         tag_n_zones = "<NUMBER OF ZONES>"
@@ -208,10 +247,9 @@ function load_tntp_network(file_network)
         return first_thru_node, network, n_zones
     end
 end
-  
+
 function read_tntp_tag(line, tag)
     int = match(Regex("(?<=^$(tag))[\\d\\s]+"), line).match
-  
+
     return parse(Int, int)
 end
-  
