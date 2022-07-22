@@ -10,7 +10,7 @@ function load_tntp(file_trips::String, file_network::String; kwargs...)
   
     # trips
     trips, n_zones_trips = load_tntp_trips(file_trips)
-  
+    
     # network
     first_thru_node, network, n_zones_network = load_tntp_network(file_network)
   

@@ -3,7 +3,7 @@ module TrafficAssign
 import DataFrames: DataFrame, select
 import Graphs: SimpleGraphs.SimpleDiGraph, DiGraph, add_edge!
 import Graphs: AbstractGraph, dijkstra_shortest_paths
-import SparseArrays: SparseMatrixCSC, sparse, nnz
+import SparseArrays: SparseMatrixCSC, sparse, nnz, dropzeros!, spzeros
 import ZipFile
 
 # tntp

@@ -8,8 +8,14 @@ function Traffic(tntp::TNTP)
     n_nodes = tntp.n_nodes
 
     # trips
-    trips = filter(:trips => !=(0), tntp.trips)
-    trips = sparse(trips.orig, trips.dest, trips.trips, n_nodes, n_nodes)
+    trips = tntp.trips
+    orig = trips.orig
+    dest = trips.dest
+
+    @assert !any(orig .== dest)
+    
+    trips = sparse(orig, dest, trips.trips, n_nodes, n_nodes)
+    dropzeros!(trips)
 
     # graph
     network = tntp.network

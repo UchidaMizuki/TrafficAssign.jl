@@ -22,10 +22,8 @@ function (shortest_paths::ShortestPaths)(dest::T) where {T<:Integer}
 
     from = shortest_path_nodes(dest)
 
-    if isempty(from)
-        return zeros(n_nodes, n_nodes)
-    else
-        to = [from[2:end]; dest]
-        Matrix(sparse(from, to, 1.0, n_nodes, n_nodes))
-    end
+    @assert !isempty(from)
+
+    to = [from[2:end]; dest]
+    sparse(from, to, 1.0, n_nodes, n_nodes)
 end

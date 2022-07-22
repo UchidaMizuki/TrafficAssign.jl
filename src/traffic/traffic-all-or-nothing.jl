@@ -1,13 +1,9 @@
-function flow_init(traffic::Traffic)
-    zeros(size(traffic.trips))
-end
-
-function all_or_nothing(traffic::Traffic, flow::Matrix{Float64})
+function all_or_nothing(traffic::Traffic, flow::Union{Float64,SparseMatrixCSC{Float64,Int64}})
     trips = traffic.trips
     graph = traffic.graph
     cost = traffic.link_performance(flow)
 
-    fill!(flow, 0.0)
+    flow = spzeros(size(cost))
 
     for orig in 1:size(trips, 1)
         trips_orig = trips[orig, :]
