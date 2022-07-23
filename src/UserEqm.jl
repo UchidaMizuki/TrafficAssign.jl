@@ -1,21 +1,34 @@
 module UserEqm
 
-import DataFrames: DataFrame, select
-import Graphs: SimpleGraphs.SimpleDiGraph, DiGraph, add_edge!
-import Graphs: AbstractGraph, dijkstra_shortest_paths
-import SparseArrays: SparseMatrixCSC, sparse, nnz, dropzeros!, spzeros
-import ZipFile
+import DataFrames: DataFrame
+import DataFrames: select
+
+import Graphs: AbstractGraph, DiGraph, SimpleGraphs.SimpleDiGraph
+import Graphs: add_edge!, dijkstra_shortest_paths
+
+import Optim: AbstractOptimizer, GoldenSection
+import Optim: optimize
+
+import Printf: @printf
+
+import SparseArrays: SparseMatrixCSC
+import SparseArrays: dropzeros!, nnz, sparse, spzeros
+
+import ZipFile: Reader
 
 include("tntp.jl")
+
 include("traffic.jl")
+include("link_performance.jl")
+include("traffic_impl.jl")
+include("all_or_nothing.jl")
+include("assign_traffic.jl")
 
 export download_tntp, load_tntp
+export TrafficOptions, Traffic
 
-export TrafficImpl, objective
-
-# export Traffic
-# export AbstractLinkPerformance, BPR
-# export ShortestPaths
-# export all_or_nothing
+# FIXME
+export TrafficImpl
+export assign_traffic
 
 end

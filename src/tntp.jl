@@ -1,19 +1,22 @@
-# global
+# Global variables
 const SHA_TNTP = "ac96f2975ec13b8803e18275e7bd92c6d7bbcde5"
 const DIR_NAME_TNTP = "TransportationNetworks-$(SHA_TNTP)"
 const PATH_TNTP = dirname(@__DIR__)
 
 
 
-# download
-function download_tntp(path=PATH_TNTP; overwrite=false)
+# Download TNTP
+function download_tntp(
+    path=PATH_TNTP; 
+    overwrite=false
+)
     dir_tntp = joinpath(path, DIR_NAME_TNTP)
 
     if !isdir(dir_tntp) || overwrite
         file = tempname()
         download("https://github.com/bstabler/TransportationNetworks/archive/$(SHA_TNTP).zip", file)
 
-        reader = ZipFile.Reader(file)
+        reader = Reader(file)
 
         for file in reader.files
             file_name = joinpath(path, file.name)
@@ -36,14 +39,22 @@ end
 
 
 
-# load
-function load_tntp(network_name::String; path=PATH_TNTP, kwargs...)
+# Load TNTP
+function load_tntp(
+    network_name::String; 
+    path=PATH_TNTP, 
+    kwargs...
+)
     file_trips, file_network = file_tntp(network_name, path=path)
 
     load_tntp(file_trips, file_network; kwargs...)
 end
 
-function load_tntp(file_trips::String, file_network::String; kwargs...)
+function load_tntp(
+    file_trips::String, 
+    file_network::String; 
+    kwargs...
+)
     @assert ispath(file_trips)
     @assert ispath(file_network)
 
@@ -63,7 +74,10 @@ function load_tntp(file_trips::String, file_network::String; kwargs...)
     return Traffic(trips, network, options=options)
 end
 
-function file_tntp(network_name; path=PATH_TNTP)
+function file_tntp(
+    network_name; 
+    path=PATH_TNTP
+)
     dir_tntp = joinpath(download_tntp(path), network_name)
 
     files = readdir(dir_tntp)

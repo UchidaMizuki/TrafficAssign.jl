@@ -1,27 +1,26 @@
 using UserEqm
 using Test
 
-using SparseArrays
+# using SparseArrays
 
-import Graphs
+# import Graphs
 
 @testset "tntp" begin
     tntp = load_tntp("SiouxFalls", toll_factor=1, length_factor=1)
 end
 
-tntp = load_tntp("Anaheim", toll_factor=1, length_factor=1)
-tntp = TrafficImpl(tntp)
+tntp = load_tntp("SiouxFalls")
+res = assign_traffic(tntp, trace=false, max_iter=1000)
 
-# tntp.link_performance
-tntp.link_performance(0.)
-objective(tntp.link_performance, 0.)
+# using Plots
 
-# traffic = Traffic(tntp)
+# plot(log.(res.calc_time), log.(res.objective))
 
-# flow = all_or_nothing(traffic, 0.0)
-# flow_new = all_or_nothing(traffic, flow)
+# res.objective
 
-# flow_new - flow
+# using TrafficAssignment
 
-# a = sparse(1:3, 1:3, 1:3)
-# b = sparse(1:3, [1, 2, 2], 1:3, 3, 3)
+# ta_data = load_ta_network("SiouxFalls")
+
+# link_flow, link_travel_time, objective = ta_frank_wolfe(ta_data, tol=1e-6)
+# objective
