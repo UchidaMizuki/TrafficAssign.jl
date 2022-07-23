@@ -86,7 +86,7 @@ function objective(
     to = bpr.to
     flow = [flow[i] for i in zip(from, to)]
 
-    out = @. bpr.free_flow_time * (flow + bpr.alpha * (flow^(bpr.beta + 1.0)) / (bpr.beta + 1.0) / bpr.capacity^bpr.beta)
+    out = @. bpr.free_flow_time * flow * (1.0 + bpr.alpha / (bpr.beta + 1.0) * (flow / bpr.capacity)^bpr.beta)
     @. out += (bpr.toll_factor * bpr.toll + bpr.length_factor * bpr.length) * flow
     filter!(isfinite, out)
 
@@ -104,7 +104,7 @@ function gradient(
     to = bpr.to
     flow = [flow[i] for i in zip(from, to)]
 
-    out = @. bpr.free_flow_time * bpr.alpha * (1. / bpr.capacity)^bpr.beta
+    out = @. bpr.free_flow_time * bpr.alpha * bpr.beta * flow^(bpr.beta - 1.0) / bpr.capacity^bpr.beta
 
     n_nodes = bpr.n_nodes
     sparse(from, to, out, n_nodes, n_nodes)
