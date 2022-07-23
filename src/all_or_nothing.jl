@@ -17,7 +17,7 @@ function all_or_nothing(
             )
 
             for (dest, trip) in zip(trips_orig.nzind, trips_orig.nzval)
-                out += trip * shortest_paths(dest)
+                out += trip .* shortest_paths(dest)
             end
         end
     end
