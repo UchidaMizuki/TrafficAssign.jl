@@ -1,6 +1,6 @@
 struct AssignTraffic
     traffic::TrafficImpl
-    flow::SparseMatrixCSC{Float64,Int}
+    flow::Vector{Float64}
     objective::Vector{Float64}
     calc_time::Vector{Float64}
 end
@@ -31,41 +31,39 @@ function assign_traffic(
     tol::Float64=1e-3,
     trace::Bool=true
 )
-    trips = traffic.trips
-    graph = traffic.graph
-    link_performance = traffic.link_performance
-
-    cost = link_performance()
+    cost = traffic.link_performance()
     flow = all_or_nothing(
-        trips,
-        graph,
+        traffic,
         cost=cost
     )
-
-    @assert algorithm in [:frank_wolfe, :truncated_quadratic]
-    if algorithm == :frank_wolfe
-        algorithm = frank_wolfe
-    elseif algorithm == :truncated_quadratic
-        algorithm = truncated_quadratic
-    end
 
     iter = 0
     obj = Float64[]
     calc_time_start = time()
     calc_time = Float64[]
 
+    @assert algorithm in [:frank_wolfe, :truncated_quadratic]
     while true
         iter += 1
 
-        flow, obj_new = algorithm(
-            trips,
-            graph,
-            link_performance,
-            flow=flow,
-            iter=iter,
-            search_method=search_method,
-            trace=trace
-        )
+        if algorithm == :frank_wolfe
+            flow, obj_new = frank_wolfe(
+                traffic,
+                flow=flow,
+                search_method=search_method
+            )
+        elseif algorithm == :truncated_quadratic
+            flow, obj_new = truncated_quadratic(
+                traffic,
+                flow=flow,
+                iter=iter,
+                search_method=search_method
+            )
+        end
+
+        if trace
+            @printf "Iteration: %7d, Objective: %13f\n" iter obj_new
+        end
 
         # TODO
         push!(obj, obj_new)
@@ -89,37 +87,28 @@ end
 # One dimensional search
 function one_dimensional_search(
     link_performance::AbstractLinkPerformance;
-    flow_start::SparseMatrixCSC{Float64,Int},
-    flow_end::SparseMatrixCSC{Float64,Int},
-    search_method::AbstractOptimizer=GoldenSection(),
-    trace::Bool=true
+    flow_start::Vector{Float64},
+    flow_end::Vector{Float64},
+    search_method::AbstractOptimizer=GoldenSection()
 )
     f(x) = objective(link_performance, @. flow_start + x * (flow_end - flow_start))
 
     one_dimensional_search(
         f,
-        link_performance,
         flow_start=flow_start,
         flow_end=flow_end,
-        search_method=search_method,
-        trace=trace
+        search_method=search_method
     )
 end
 
 function one_dimensional_search(
-    f::Function,
-    link_performance::AbstractLinkPerformance;
-    flow_start::SparseMatrixCSC{Float64,Int},
-    flow_end::SparseMatrixCSC{Float64,Int},
-    search_method::AbstractOptimizer=GoldenSection(),
-    trace::Bool=true
+    f::Function;
+    flow_start::Vector{Float64},
+    flow_end::Vector{Float64},
+    search_method::AbstractOptimizer=GoldenSection()
 )
     opt = optimize(f, 0.0, 1.0, method=search_method)
     obj = opt.minimum
-
-    if trace
-        @printf "Objective: %15f\n" obj
-    end
 
     flow = @. flow_start + opt.minimizer * (flow_end - flow_start)
 
@@ -130,18 +119,15 @@ end
 
 # Frank-Wolfe algorithm
 function frank_wolfe(
-    trips::SparseMatrixCSC{Float64,Int},
-    graph::SimpleDiGraph{Int},
-    link_performance::AbstractLinkPerformance;
-    flow::SparseMatrixCSC{Float64,Int},
-    iter::Int,
+    traffic::TrafficImpl;
+    flow::Vector{Float64},
     search_method::AbstractOptimizer=GoldenSection(),
-    trace::Bool=true
 )
+    link_performance = traffic.link_performance
+
     cost = link_performance(flow)
     flow_end = all_or_nothing(
-        trips,
-        graph,
+        traffic,
         cost=cost
     )
 
@@ -149,61 +135,90 @@ function frank_wolfe(
         link_performance,
         flow_start=flow,
         flow_end=flow_end,
-        search_method=search_method,
-        trace=trace
+        search_method=search_method
     )
 end
 
 
 
+# TODO: Bug Fix?
 # Truncated Quadratic Programming method
 function truncated_quadratic(
-    trips::SparseMatrixCSC{Float64,Int},
-    graph::SimpleDiGraph{Int},
-    link_performance::AbstractLinkPerformance;
-    flow::SparseMatrixCSC{Float64,Int},
+    traffic::TrafficImpl;
+    flow::Vector{Float64},
     iter::Int,
-    search_method::AbstractOptimizer=GoldenSection(),
-    trace::Bool=true
+    search_method::AbstractOptimizer=GoldenSection()
 )
+    link_performance = traffic.link_performance
+
     cost = link_performance(flow)
     grad = gradient(link_performance, flow)
 
     max_iter = min(4, Int(round(iter / 3)))
-    iter = 0
-    flow_start = flow
 
-    while iter < max_iter
+    iter = 0
+    flow_end = copy(flow)
+
+    while iter <= max_iter
         iter += 1
 
-        cost_end = @. cost + grad * (flow_start - flow)
-        flow_end = all_or_nothing(
-            trips,
-            graph,
-            cost=cost_end
+        # Sub problem
+        cost_sub = @. cost + grad * (flow_end - flow)
+
+        flow_sub = all_or_nothing(
+            traffic,
+            cost=cost_sub
         )
 
         function f(x)
-            diff_flow = flow_start + x * (flow_end - flow_start) - flow
+            diff_flow = flow_end + x * (flow_sub - flow_end) - flow
 
-            sum(@. cost * diff_flow + 1.0 / 2.0 * grad * diff_flow^2.0)
+            sum(@. cost * diff_flow + grad * diff_flow^2.0 / 2.0)
         end
 
-        flow_start, _ = one_dimensional_search(
+        flow_end, _ = one_dimensional_search(
             f,
-            link_performance,
-            flow_start=flow_start,
-            flow_end=flow_end,
-            search_method=search_method,
-            trace=false
+            flow_start=flow_end,
+            flow_end=flow_sub,
+            search_method=search_method
         )
     end
 
     one_dimensional_search(
         link_performance,
         flow_start=flow,
-        flow_end=flow_start,
-        search_method=search_method,
-        trace=trace
+        flow_end=flow_end,
+        search_method=search_method
     )
+end
+
+
+
+# Simplicial Decomposiotion method
+function simplicial_decomposiotion(
+    traffic::TrafficImpl;
+    flow::Vector{Float64},
+    max_elems::Int=5
+)
+    link_performance = traffic.link_performance
+
+    # E
+    elems = Vector{Vector{Float64}}
+    
+    # F
+    elem = flow
+
+    cost = link_performance(flow)
+    flow_end = all_or_nothing(
+        traffic,
+        cost=cost
+    )
+
+    if cost' * (flow_end - flow) >= 0.0
+        obj = objective(link_performance, flow)
+
+        return flow, obj
+    end
+
+
 end

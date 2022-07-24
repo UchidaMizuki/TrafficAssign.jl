@@ -1,18 +1,25 @@
 # All or nothing assignment
 function all_or_nothing(
-    trips::SparseMatrixCSC{Float64,Int},
-    graph::SimpleDiGraph{Int};
-    cost::SparseMatrixCSC{Float64,Int}
+    traffic::TrafficImpl;
+    cost::Vector{Float64}
 )
-    out = spzeros(size(cost))
+    n_nodes = traffic.n_nodes
+    from = traffic.from
+    to = traffic.to
+
+    trips = traffic.trips
+    graph = traffic.graph
+
+    cost = sparse(from, to, cost, n_nodes, n_nodes)
+    out = spzeros(n_nodes, n_nodes)
 
     for orig in 1:size(trips, 1)
         trips_orig = trips[orig, :]
 
         if nnz(trips_orig) > 0
             shortest_paths = ShortestPaths(
-                graph, 
-                cost=cost, 
+                graph,
+                cost=cost,
                 orig=orig
             )
 
@@ -22,7 +29,7 @@ function all_or_nothing(
         end
     end
 
-    return out
+    return [out[i] for i in zip(from, to)]
 end
 
 

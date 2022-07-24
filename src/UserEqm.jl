@@ -29,6 +29,7 @@ export TrafficOptions, Traffic
 
 # FIXME
 export TrafficImpl
+export all_or_nothing, objective
 export assign_traffic
 
 end
