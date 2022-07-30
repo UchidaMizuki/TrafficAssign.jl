@@ -1,7 +1,7 @@
 function assign_traffic(
     traffic::Traffic;
     flow_init::Vector{Float64}=[0.0],
-    algorithm::AbstractTrafficAssigAlgorithm=FrankWolfe()
+    algorithm::AbstractTrafficAssigAlgorithm=ConjugateFrankWolfe()
 )
     assign_traffic(
         TrafficImpl(traffic),
@@ -13,7 +13,7 @@ end
 function assign_traffic(
     traffic::TrafficImpl;
     flow_init::Vector{Float64}=[0.0],
-    algorithm::AbstractTrafficAssigAlgorithm=FrankWolfe()
+    algorithm::AbstractTrafficAssigAlgorithm=ConjugateFrankWolfe()
 )
     cost = traffic.link_performance(flow_init)
     flow = all_or_nothing(traffic, cost)

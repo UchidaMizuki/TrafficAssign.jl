@@ -28,7 +28,7 @@ include("assign_traffic.jl")
 
 export download_tntp, load_tntp
 export TrafficOptions, Traffic
-export FrankWolfe
+export FrankWolfe, ConjugateFrankWolfe
 export assign_traffic
 
 end
