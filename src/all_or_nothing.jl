@@ -1,6 +1,6 @@
 # All or nothing assignment
 function all_or_nothing(
-    traffic::TrafficImpl;
+    traffic::TrafficImpl,
     cost::Vector{Float64}
 )
     n_nodes = traffic.n_nodes
@@ -13,7 +13,7 @@ function all_or_nothing(
     cost = sparse(from, to, cost, n_nodes, n_nodes)
     out = spzeros(n_nodes, n_nodes)
 
-    for orig in 1:size(trips, 1)
+    for orig in axes(trips, 1)
         trips_orig = trips[orig, :]
 
         if nnz(trips_orig) > 0

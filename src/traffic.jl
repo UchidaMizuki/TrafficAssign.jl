@@ -1,6 +1,6 @@
 # Traffic
-Base.@kwdef struct TrafficOptions
-    link_performance::Symbol=:BPR
+@kwdef struct TrafficOptions
+    link_performance::Symbol = :BPR
     first_thru_node::Int = 1
     toll_factor::Float64 = 0.0
     length_factor::Float64 = 0.0
@@ -20,16 +20,16 @@ struct Traffic
         # TODO: Support for non BPR functions.
         link_performance = options.link_performance
         @assert link_performance in [:BPR]
-    
+
         if link_performance == :BPR
             trips = trips |>
-                x -> select(x, :orig, :dest, :trips)
+                    x -> select(x, :orig, :dest, :trips)
             network = network |>
-                x -> select(x, :from, :to, :free_flow_time, :capacity, :alpha, :beta, :toll, :length)
+                      x -> select(x, :from, :to, :free_flow_time, :capacity, :alpha, :beta, :toll, :length)
         end
-    
+
         n_nodes = max([network.from; network.to]...)
-    
+
         return new(
             n_nodes,
             trips,
@@ -40,8 +40,8 @@ struct Traffic
 end
 
 function Base.show(
-    io::IO, 
-    mime::MIME"text/plain", 
+    io::IO,
+    mime::MIME"text/plain",
     traffic::Traffic
 )
     print(io, "Number of nodes: $(traffic.n_nodes)\n")

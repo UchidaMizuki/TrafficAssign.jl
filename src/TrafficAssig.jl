@@ -1,5 +1,7 @@
 module TrafficAssig
 
+import Base: @kwdef
+
 import DataFrames: DataFrame
 import DataFrames: select
 
@@ -17,19 +19,16 @@ import SparseArrays: dropzeros!, nnz, sparse, spzeros
 import ZipFile: Reader
 
 include("tntp.jl")
-
 include("traffic.jl")
 include("link_performance.jl")
 include("traffic_impl.jl")
 include("all_or_nothing.jl")
+include("algorithm.jl")
 include("assign_traffic.jl")
 
 export download_tntp, load_tntp
 export TrafficOptions, Traffic
-
-# FIXME
-export TrafficImpl
-export all_or_nothing, objective
+export FrankWolfe
 export assign_traffic
 
 end
