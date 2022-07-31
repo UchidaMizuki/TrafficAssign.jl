@@ -5,10 +5,8 @@ format: gfm
 
 TrafficAssig is a Julia package for...
 
-1. Load [Transportation Networks](https://github.com/bstabler/TransportationNetworks) data.
+1. Load [Transportation Networks](https://github.com/bstabler/TransportationNetworks) data or construct traffic data from data frames.
 1. Traffic assignment with User Equilibrium.
-
-
 
 ## Examples
 
@@ -22,8 +20,6 @@ assign_traffic(tntp)
 
 ```{julia}
 #| output: false
-using Plots
-
 tntp = load_tntp("Barcelona")
 
 res_FW = assign_traffic(tntp, algorithm=FrankWolfe())
@@ -32,6 +28,9 @@ res_BFW = assign_traffic(tntp, algorithm=BiconjugateFrankWolfe())
 ```
 
 ```{julia}
+#| echo: false
+using Plots
+
 plt = plot(
     res_FW.logs.exec_time, res_FW.logs.relative_gap, 
     yaxis=:log,
@@ -47,4 +46,10 @@ plot!(
     plt, res_BFW.logs.exec_time, res_BFW.logs.relative_gap, 
     label="Biconjugate Frank-Wolfe"
 )
+```
+
+## Comparisons
+
+```{julia}
+
 ```
