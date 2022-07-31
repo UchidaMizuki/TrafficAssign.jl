@@ -41,8 +41,8 @@ end
 
 # Load TNTP
 function load_tntp(
-    network_name::String; 
-    path=PATH_TNTP, 
+    network_name::String;
+    path=PATH_TNTP,
     kwargs...
 )
     file_trips, file_network = file_tntp(network_name, path=path)
@@ -81,8 +81,8 @@ function file_tntp(
     dir_tntp = joinpath(download_tntp(path), network_name)
 
     files = readdir(dir_tntp)
-    file_name_trips = files[endswith.(files, "_trips.tntp")][1]
-    file_name_network = files[endswith.(files, "_net.tntp")][1]
+    file_name_trips = files[contains.(files, "_trips")][1]
+    file_name_network = files[contains.(files, "_net")][1]
 
     file_trips = joinpath(dir_tntp, file_name_trips)
     file_network = joinpath(dir_tntp, file_name_network)
@@ -218,7 +218,7 @@ function load_tntp_network(file_network)
         while !eof(file)
             line = readline(file)
 
-            if line == "" || startswith(line, "~")
+            if contains(line, r"^\s*$") || startswith(line, "~")
                 continue
             else
                 line = split(line, r"\s+")

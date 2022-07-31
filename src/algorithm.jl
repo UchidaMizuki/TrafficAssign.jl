@@ -4,28 +4,29 @@ abstract type AbstractTrafficAssigAlgorithm end
     search_method::AbstractOptimizer = GoldenSection()
     tol::Float64 = 1e-4
     max_iter = 1000
-    trace::Bool = false
+    trace::Bool = true
 end
 
 @kwdef struct ConjugateFrankWolfe <: AbstractTrafficAssigAlgorithm
     search_method::AbstractOptimizer = GoldenSection()
-    δ::Float64 = 1e-6
+    δ::Float64 = 1e-9
     tol::Float64 = 1e-4
     max_iter = 1000
-    trace::Bool = false
+    trace::Bool = true
 end
 
 @kwdef struct BiconjugateFrankWolfe <: AbstractTrafficAssigAlgorithm
     search_method::AbstractOptimizer = GoldenSection()
-    δ::Float64 = 1e-6
+    δ::Float64 = 1e-9
     tol::Float64 = 1e-4
     max_iter = 1000
-    trace::Bool = false
+    trace::Bool = true
 end
 
 @kwdef mutable struct TrafficAssigLogs
     best_lower_bound::Float64 = -Inf64
     upper_bound::Float64 = 0.0
+    objective::Vector{Float64} = Float64[]
     relative_gap::Vector{Float64} = Float64[]
 
     exec_time_start::Float64 = time()
@@ -39,19 +40,23 @@ function (algorithm::FrankWolfe)(
     link_performance = traffic.link_performance
 
     logs = TrafficAssigLogs()
+    if algorithm.trace
+        start_logs()
+    end
 
     for iter in 1:algorithm.max_iter
-        flow_FW, Δflow_FW = direction_frank_wolfe(traffic, flow)
-        best_lower_bound!(logs, traffic, flow, flow_FW)
+        flow_FW, Δflow_FW = dir_FW(traffic, flow)
+        update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
         τ, logs.upper_bound = one_dimensional_search(
             link_performance, flow, Δflow_FW,
             search_method=algorithm.search_method
         )
-        relative_gap!(logs)
+        update_objective!(logs)
+        update_relative_gap!(logs)
 
         flow = @. flow + τ * Δflow_FW
-        exec_time!(logs)
+        update_exec_time!(logs)
 
         if algorithm.trace
             trace_logs(iter, logs)
@@ -73,29 +78,35 @@ function (algorithm::ConjugateFrankWolfe)(
 
     n_edges = size(flow, 1)
 
-    flow_FW = flow # y_k^FW
-    flow_CFW = flow # s_k^CFW
+    flow_FW = Vector{Float64}(undef, n_edges) # y_k^FW
+    flow_CFW = Vector{Float64}(undef, n_edges) # s_k^CFW
 
     Δflow_FW = Vector{Float64}(undef, n_edges) # d_k^FW
     Δflow_CFW = Vector{Float64}(undef, n_edges) # d_k^CFW
 
     δ = algorithm.δ
-
     τ = 1.0
 
+    step_FW = :FW
+
     logs = TrafficAssigLogs()
+    if algorithm.trace
+        start_logs()
+    end
 
     for iter in 1:algorithm.max_iter
-        flow_FW, Δflow_FW = direction_frank_wolfe(traffic, flow)
-        best_lower_bound!(logs, traffic, flow, flow_FW)
+        flow_FW, Δflow_FW = dir_FW(traffic, flow)
+        update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
-        if τ > 1 - δ
+        if step_FW == :FW
             # Frank-Wolfe
             flow_CFW = flow_FW
             Δflow_CFW = flow_CFW - flow
+
+            step_FW = :CFW
         else
             # Conjugate Frank-Wolfe
-            flow_CFW, Δflow_CFW = direction_conjugate_frank_wolfe(
+            flow_CFW, Δflow_CFW = dir_CFW(
                 traffic, flow,
                 flow_FW=flow_FW,
                 flow_CFW=flow_CFW,
@@ -110,10 +121,14 @@ function (algorithm::ConjugateFrankWolfe)(
             link_performance, flow, Δflow_CFW,
             search_method=algorithm.search_method
         )
-        relative_gap!(logs)
+        if τ > 1 - δ
+            step_FW = :FW
+        end
+        update_objective!(logs)
+        update_relative_gap!(logs)
 
         flow = @. flow + τ * Δflow_CFW
-        exec_time!(logs)
+        update_exec_time!(logs)
 
         if algorithm.trace
             trace_logs(iter, logs)
@@ -135,9 +150,9 @@ function (algorithm::BiconjugateFrankWolfe)(
 
     n_edges = size(flow, 1)
 
-    flow_FW = flow # y_k^FW
-    flow_BFW = flow # s_k^BFW
-    flow_BFW_pred = flow # s_{k-1}^BFW
+    flow_FW = Vector{Float64}(undef, n_edges) # y_k^FW
+    flow_BFW = Vector{Float64}(undef, n_edges) # s_k^BFW
+    flow_BFW_pred = Vector{Float64}(undef, n_edges) # s_{k-1}^BFW
 
     Δflow_FW = Vector{Float64}(undef, n_edges) # d_k^FW
     Δflow_BFW = Vector{Float64}(undef, n_edges) # d_k^BFW
@@ -145,52 +160,73 @@ function (algorithm::BiconjugateFrankWolfe)(
 
     δ = algorithm.δ
 
-    τ_pred = 1.0
     τ = 1.0
+    τ_pred = 1.0
+
+    step_FW = :FW
 
     logs = TrafficAssigLogs()
-
-    for iter in 1:algorithm.max_iter
-        flow_FW, Δflow_FW = direction_frank_wolfe(traffic, flow)
-        best_lower_bound!(logs, traffic, flow, flow_FW)
-
-        # if τ > 1 - δ
-        #     # Frank-Wolfe
-        #     flow_BFW_pred = flow_FW
-        #     Δflow_BFW = flow_BFW - flow
-        #     # TODO
-
-        # elseif τ_pred > 1 - δ
-        #     # Conjugate Frank-Wolfe
-        #     # TODO
-
-        # else
-            
+    if algorithm.trace
+        start_logs()
     end
 
-        # if τ > 1 - δ
-        #     flow_CFW = flow_FW
-        #     Δflow_CFW = flow_CFW - flow
-        # else
-        #     flow_CFW, Δflow_CFW = direction_conjugate_frank_wolfe(
-        #         traffic, flow,
-        #         flow_FW=flow_FW,
-        #         flow_CFW=flow_CFW,
-        #         Δflow_FW=Δflow_FW,
-        #         Δflow_CFW=Δflow_CFW,
-        #         τ=τ,
-        #         δ=δ
-        #     )
-        # end
+    for iter in 1:algorithm.max_iter
+        flow_FW, Δflow_FW = dir_FW(traffic, flow)
+        update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
-        # τ, logs.upper_bound = one_dimensional_search(
-        #     link_performance, flow, Δflow_CFW,
-        #     search_method=algorithm.search_method
-        # )
-        # relative_gap!(logs)
+        if step_FW == :FW
+            # Frank-Wolfe
+            flow_BFW = flow_FW
+            Δflow_BFW = flow_BFW - flow
+        
+            step_FW = :CFW
+        elseif step_FW == :CFW
+            # Conjugate Frank-Wolfe
+            flow_BFW_pred = flow_BFW
+            Δflow_BFW_pred = Δflow_BFW
+            flow_BFW, Δflow_BFW = dir_CFW(
+                traffic, flow,
+                flow_FW=flow_FW,
+                flow_CFW=flow_BFW,
+                Δflow_FW=Δflow_FW,
+                Δflow_CFW=Δflow_BFW,
+                τ=τ,
+                δ=δ
+            )
+        
+            step_FW = :BFW
+        else
+            # Biconjugate Frank-Wolfe
+            flow_BFW_new, Δflow_BFW_new = dir_BFW(
+                traffic, flow,
+                flow_FW=flow_FW,
+                flow_BFW=flow_BFW,
+                flow_BFW_pred=flow_BFW_pred,
+                Δflow_FW=Δflow_FW,
+                Δflow_BFW=Δflow_BFW,
+                Δflow_BFW_pred=Δflow_BFW_pred,
+                τ=τ,
+                τ_pred=τ_pred
+            )
+            flow_BFW_pred = flow_BFW
+            Δflow_BFW_pred = Δflow_BFW
+            flow_BFW = flow_BFW_new
+            Δflow_BFW = Δflow_BFW_new
+        end
 
-        # flow = @. flow + τ * Δflow_CFW
-        # exec_time!(logs)
+        τ_pred = τ
+        τ, logs.upper_bound = one_dimensional_search(
+            link_performance, flow, Δflow_BFW,
+            search_method=algorithm.search_method
+        )
+        if τ > 1 - δ
+            step_FW = :FW
+        end
+        update_objective!(logs)
+        update_relative_gap!(logs)
+
+        flow = @. flow + τ * Δflow_BFW
+        update_exec_time!(logs)
 
         if algorithm.trace
             trace_logs(iter, logs)
@@ -204,7 +240,7 @@ function (algorithm::BiconjugateFrankWolfe)(
     return flow, logs
 end
 
-function direction_frank_wolfe(
+function dir_FW(
     traffic::TrafficImpl,
     flow::Vector{Float64}
 )
@@ -215,7 +251,7 @@ function direction_frank_wolfe(
     return flow_FW, Δflow_FW
 end
 
-function direction_conjugate_frank_wolfe(
+function dir_CFW(
     traffic::TrafficImpl,
     flow::Vector{Float64};
     flow_FW::Vector{Float64},
@@ -226,10 +262,12 @@ function direction_conjugate_frank_wolfe(
     δ::Float64
 )
     Δflow_bar = (1.0 - τ) * Δflow_CFW
+
     H = gradient(traffic.link_performance, flow)
     N = Δflow_bar' * (H .* Δflow_FW)
     D = Δflow_bar' * (H .* (Δflow_FW - Δflow_bar))
 
+    # a: alpha
     N_D = N / D
     if D != 0.0 && 0.0 <= N_D <= 1.0 - δ
         a = N_D
@@ -245,7 +283,78 @@ function direction_conjugate_frank_wolfe(
     return flow_CFW, Δflow_CFW
 end
 
-function best_lower_bound!(
+function dir_BFW(
+    traffic::TrafficImpl,
+    flow::Vector{Float64};
+    flow_FW::Vector{Float64},
+    flow_BFW::Vector{Float64},
+    flow_BFW_pred::Vector{Float64},
+    Δflow_FW::Vector{Float64},
+    Δflow_BFW::Vector{Float64},
+    Δflow_BFW_pred::Vector{Float64},
+    τ::Float64,
+    τ_pred::Float64
+)
+    Δflow_bar = (1.0 - τ) * Δflow_BFW
+    Δflow_bar_bar = (1.0 - τ) * (1 - τ_pred) * Δflow_BFW_pred # τ * flow_BFW - flow + (1 - τ) * flow_BFW_pred
+
+    H = gradient(traffic.link_performance, flow)
+    μ = -(Δflow_bar_bar' * (H .* Δflow_FW)) / (Δflow_bar_bar' * (H .* (flow_BFW_pred - flow_BFW)))
+    v = -(Δflow_bar' * (H .* Δflow_FW)) / (Δflow_bar' * (H .* Δflow_bar)) + μ * τ / (1 - τ) # v: nu
+
+    μ = max(0.0, μ)
+    v = max(0.0, v)
+
+    β_FW = 1.0 / (1.0 + μ + v)
+    β_BFW = v * β_FW
+    β_BFW_pred = μ * β_FW
+
+    flow_BFW = β_FW * flow_FW + β_BFW * flow_BFW + β_BFW_pred * flow_BFW_pred
+    Δflow_BFW = flow_BFW - flow
+
+    return flow_BFW, Δflow_BFW
+end
+
+
+
+# One dimensional search
+function one_dimensional_search(
+    link_performance::AbstractLinkPerformance,
+    flow::Vector{Float64},
+    Δflow::Vector{Float64};
+    search_method::AbstractOptimizer=GoldenSection()
+)
+    f(τ) = objective(link_performance, @. flow + τ * Δflow)
+
+    one_dimensional_search(
+        f,
+        search_method=search_method
+    )
+end
+
+function one_dimensional_search(
+    f::Function;
+    search_method::AbstractOptimizer=GoldenSection()
+)
+    opt = optimize(
+        f, 0.0, 1.0,
+        method=search_method
+    )
+
+    τ = opt.minimizer
+    obj = opt.minimum
+
+    return τ, obj
+end
+
+
+
+# Update and trace logs
+function start_logs()
+    @printf "Start Execution\n"
+end
+
+function update_best_lower_bound!(
     logs::TrafficAssigLogs,
     traffic::TrafficImpl,
     flow::Vector{Float64},
@@ -264,7 +373,13 @@ function best_lower_bound!(
     return logs
 end
 
-function relative_gap!(logs::TrafficAssigLogs)
+function update_objective!(logs::TrafficAssigLogs)
+    push!(logs.objective, logs.upper_bound)
+
+    return logs
+end
+
+function update_relative_gap!(logs::TrafficAssigLogs)
     best_lower_bound = logs.best_lower_bound
 
     gap = logs.upper_bound - best_lower_bound
@@ -276,7 +391,7 @@ function relative_gap!(logs::TrafficAssigLogs)
     return logs
 end
 
-function exec_time!(logs::TrafficAssigLogs)
+function update_exec_time!(logs::TrafficAssigLogs)
     push!(logs.exec_time, time() - logs.exec_time_start)
 
     return logs
@@ -286,7 +401,10 @@ function trace_logs(
     iter::Int,
     logs::TrafficAssigLogs
 )
-    @printf "Iteration: %7d, Objective: %13f, Execution-Time: %13f\n" iter last(logs.relative_gap) last(logs.exec_time)
+    obj = last(logs.objective)
+    relative_gap = last(logs.relative_gap)
+    exec_time = last(logs.exec_time)
+    @printf "Iteration: %7d, Objective: %13f, Relative Gap: %13f, Execution Time: %13f\n" iter obj relative_gap exec_time
 end
 
 # Truncated Quadratic Programming method
@@ -357,7 +475,6 @@ end
 #         cost=cost
 #     )
 
-#     # TODO
 #     if cost' * (flow_end - flow) >= 0.0
 #         obj = objective(link_performance, flow)
 

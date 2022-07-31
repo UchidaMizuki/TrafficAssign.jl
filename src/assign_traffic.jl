@@ -1,7 +1,7 @@
 function assign_traffic(
     traffic::Traffic;
     flow_init::Vector{Float64}=[0.0],
-    algorithm::AbstractTrafficAssigAlgorithm=ConjugateFrankWolfe()
+    algorithm::AbstractTrafficAssigAlgorithm=BiconjugateFrankWolfe()
 )
     assign_traffic(
         TrafficImpl(traffic),
@@ -13,7 +13,7 @@ end
 function assign_traffic(
     traffic::TrafficImpl;
     flow_init::Vector{Float64}=[0.0],
-    algorithm::AbstractTrafficAssigAlgorithm=ConjugateFrankWolfe()
+    algorithm::AbstractTrafficAssigAlgorithm=BiconjugateFrankWolfe()
 )
     cost = traffic.link_performance(flow_init)
     flow = all_or_nothing(traffic, cost)
@@ -21,36 +21,4 @@ function assign_traffic(
     flow, logs = algorithm(traffic, flow)
 
     return flow, logs
-end
-
-
-
-# One dimensional search
-function one_dimensional_search(
-    link_performance::AbstractLinkPerformance,
-    flow::Vector{Float64},
-    Δflow::Vector{Float64};
-    search_method::AbstractOptimizer=GoldenSection()
-)
-    f(τ) = objective(link_performance, @. flow + τ * Δflow)
-
-    one_dimensional_search(
-        f, 
-        search_method=search_method
-    )
-end
-
-function one_dimensional_search(
-    f::Function;
-    search_method::AbstractOptimizer=GoldenSection()
-)
-    opt = optimize(
-        f, 0.0, 1.0,
-        method=search_method
-    )
-
-    τ = opt.minimizer
-    obj = opt.minimum
-
-    return τ, obj
 end
