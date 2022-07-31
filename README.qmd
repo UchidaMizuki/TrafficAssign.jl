@@ -1,0 +1,11 @@
+---
+title: "TrafficAssig.jl"
+format: gfm
+---
+
+```{julia}
+using TrafficAssig
+
+tntp = load_tntp("Anaheim")
+assign_traffic(tntp)
+```
