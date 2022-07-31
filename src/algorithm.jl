@@ -9,7 +9,7 @@ end
 
 @kwdef struct ConjugateFrankWolfe <: AbstractTrafficAssigAlgorithm
     search_method::AbstractOptimizer = GoldenSection()
-    δ::Float64 = 1e-9
+    δ::Float64 = 1e-6
     tol::Float64 = 1e-4
     max_iter = 1000
     trace::Bool = true
@@ -17,7 +17,7 @@ end
 
 @kwdef struct BiconjugateFrankWolfe <: AbstractTrafficAssigAlgorithm
     search_method::AbstractOptimizer = GoldenSection()
-    δ::Float64 = 1e-9
+    δ::Float64 = 1e-6
     tol::Float64 = 1e-4
     max_iter = 1000
     trace::Bool = true
@@ -178,7 +178,7 @@ function (algorithm::BiconjugateFrankWolfe)(
             # Frank-Wolfe
             flow_BFW = flow_FW
             Δflow_BFW = flow_BFW - flow
-        
+
             step_FW = :CFW
         elseif step_FW == :CFW
             # Conjugate Frank-Wolfe
@@ -193,7 +193,7 @@ function (algorithm::BiconjugateFrankWolfe)(
                 τ=τ,
                 δ=δ
             )
-        
+
             step_FW = :BFW
         else
             # Biconjugate Frank-Wolfe
