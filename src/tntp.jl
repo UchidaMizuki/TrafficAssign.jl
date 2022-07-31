@@ -155,7 +155,7 @@ function load_tntp_trips(file_trips)
             @warn "Number of unique origins and destinations does not match the number of zones"
         end
 
-        if !isapprox(sum(trips), total_od_flow)
+        if !isapprox(sum(trips), total_od_flow, atol=1.0)
             @warn "`total_od_flow` does not match total number of trips"
         end
 

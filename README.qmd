@@ -3,9 +3,48 @@ title: "TrafficAssig.jl"
 format: gfm
 ---
 
+TrafficAssig is a Julia package for...
+
+1. Load [Transportation Networks](https://github.com/bstabler/TransportationNetworks) data.
+1. Traffic assignment with User Equilibrium.
+
+
+
+## Examples
+
 ```{julia}
+#| warning: false
 using TrafficAssig
 
 tntp = load_tntp("Anaheim")
 assign_traffic(tntp)
+```
+
+```{julia}
+#| output: false
+using Plots
+
+tntp = load_tntp("Barcelona")
+
+res_FW = assign_traffic(tntp, algorithm=FrankWolfe())
+res_CFW = assign_traffic(tntp, algorithm=ConjugateFrankWolfe())
+res_BFW = assign_traffic(tntp, algorithm=BiconjugateFrankWolfe())
+```
+
+```{julia}
+plt = plot(
+    res_FW.logs.exec_time, res_FW.logs.relative_gap, 
+    yaxis=:log,
+    xlabel="Execution Time [sec]",
+    ylabel="Relative Gap",
+    label="Frank-Wolfe"
+)
+plot!(
+    plt, res_CFW.logs.exec_time, res_CFW.logs.relative_gap, 
+    label="Conjugate Frank-Wolfe"
+)
+plot!(
+    plt, res_BFW.logs.exec_time, res_BFW.logs.relative_gap, 
+    label="Biconjugate Frank-Wolfe"
+)
 ```
