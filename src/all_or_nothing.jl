@@ -11,7 +11,6 @@ function all_or_nothing(
     graph = traffic.graph
 
     cost = sparse(from, to, cost, n_nodes, n_nodes)
-    # out = spzeros(n_nodes, n_nodes)
     
     out = @distributed (+) for orig in collect(axes(trips, 1))
         trips_orig = trips[orig, :]
@@ -74,6 +73,19 @@ function (shortest_paths::ShortestPaths)(dest::Int)
             return [shortest_path_nodes(parent); parent]
         end
     end
+
+    # function shortest_path_nodes(dest::Int, memo::Dict{Int, Vector{Int}}=Dict{Int, Vector{Int}}())
+    #     if dest in keys(memo)
+    #         return memo[dest]
+    #     end
+
+    #     parent = parents[dest]
+
+    #     out = parent == 0 ? Int[] : [shortest_path_nodes(parent, memo); parent]
+    #     memo[dest] = out
+
+    #     return out
+    # end
 
     from = shortest_path_nodes(dest)
 
