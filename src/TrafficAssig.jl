@@ -5,6 +5,8 @@ import Base: @kwdef
 import DataFrames: DataFrame
 import DataFrames: select
 
+import Distributed: @distributed
+
 import Graphs: AbstractGraph, DiGraph, SimpleGraphs.SimpleDiGraph
 import Graphs: add_edge!, dijkstra_shortest_paths
 
@@ -14,7 +16,7 @@ import Optim: optimize
 import Printf: @printf
 
 import SparseArrays: SparseMatrixCSC
-import SparseArrays: dropzeros!, nnz, sparse, spzeros
+import SparseArrays: dropzeros!, findnz, nnz, sparse, spzeros
 
 import ZipFile: Reader
 
@@ -31,7 +33,7 @@ export TrafficOptions, Traffic
 export BPR
 export TrafficImpl
 export all_or_nothing, ShortestPaths
-export FrankWolfe, ConjugateFrankWolfe, BiconjugateFrankWolfe
+export AbstractTrafficAssigAlgorithm, FrankWolfe, ConjugateFrankWolfe, BiconjugateFrankWolfe, AbstractTrafficAssigLogs, TrafficAssigLogs
 export assign_traffic
 
 end

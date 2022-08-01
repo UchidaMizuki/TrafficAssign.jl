@@ -3,7 +3,7 @@ abstract type AbstractTrafficAssigAlgorithm end
 @kwdef struct FrankWolfe <: AbstractTrafficAssigAlgorithm
     search_method::AbstractOptimizer = GoldenSection()
     tol::Float64 = 1e-4
-    max_iter = 1000
+    max_iter = 1_000
     trace::Bool = true
 end
 
@@ -11,7 +11,7 @@ end
     search_method::AbstractOptimizer = GoldenSection()
     δ::Float64 = 1e-6
     tol::Float64 = 1e-4
-    max_iter = 1000
+    max_iter = 1_000
     trace::Bool = true
 end
 
@@ -19,11 +19,13 @@ end
     search_method::AbstractOptimizer = GoldenSection()
     δ::Float64 = 1e-6
     tol::Float64 = 1e-4
-    max_iter = 1000
+    max_iter = 1_000
     trace::Bool = true
 end
 
-@kwdef mutable struct TrafficAssigLogs
+abstract type AbstractTrafficAssigLogs end
+
+@kwdef mutable struct TrafficAssigLogs <: AbstractTrafficAssigLogs
     best_lower_bound::Float64 = -Inf64
     upper_bound::Float64 = 0.0
     objective::Vector{Float64} = Float64[]
@@ -355,7 +357,7 @@ function start_logs()
 end
 
 function update_best_lower_bound!(
-    logs::TrafficAssigLogs,
+    logs::AbstractTrafficAssigLogs,
     traffic::TrafficImpl,
     flow::Vector{Float64},
     flow_end::Vector{Float64}
@@ -373,13 +375,13 @@ function update_best_lower_bound!(
     return logs
 end
 
-function update_objective!(logs::TrafficAssigLogs)
+function update_objective!(logs::AbstractTrafficAssigLogs)
     push!(logs.objective, logs.upper_bound)
 
     return logs
 end
 
-function update_relative_gap!(logs::TrafficAssigLogs)
+function update_relative_gap!(logs::AbstractTrafficAssigLogs)
     best_lower_bound = logs.best_lower_bound
 
     gap = logs.upper_bound - best_lower_bound
@@ -391,7 +393,7 @@ function update_relative_gap!(logs::TrafficAssigLogs)
     return logs
 end
 
-function update_exec_time!(logs::TrafficAssigLogs)
+function update_exec_time!(logs::AbstractTrafficAssigLogs)
     push!(logs.exec_time, time() - logs.exec_time_start)
 
     return logs
@@ -399,7 +401,7 @@ end
 
 function trace_logs(
     iter::Int,
-    logs::TrafficAssigLogs
+    logs::AbstractTrafficAssigLogs
 )
     obj = last(logs.objective)
     relative_gap = last(logs.relative_gap)

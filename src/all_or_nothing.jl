@@ -11,9 +11,9 @@ function all_or_nothing(
     graph = traffic.graph
 
     cost = sparse(from, to, cost, n_nodes, n_nodes)
-    out = spzeros(n_nodes, n_nodes)
-
-    for orig in axes(trips, 1)
+    # out = spzeros(n_nodes, n_nodes)
+    
+    out = @distributed (+) for orig in collect(axes(trips, 1))
         trips_orig = trips[orig, :]
 
         if nnz(trips_orig) > 0
@@ -23,9 +23,11 @@ function all_or_nothing(
                 orig=orig
             )
 
-            for (dest, trip) in zip(trips_orig.nzind, trips_orig.nzval)
-                out += trip * shortest_paths(dest)
+            @distributed (+) for (dest, trip) in collect(zip(findnz(trips_orig)...))
+                trip * shortest_paths(dest)
             end
+        else
+            spzeros(n_nodes, n_nodes)
         end
     end
 
@@ -35,27 +37,39 @@ end
 
 
 # Shortest paths
-struct ShortestPaths{T<:Integer}
-    parents::Vector{T}
+struct ShortestPaths
+    parents::Vector{Int}
     function ShortestPaths(
         graph::AbstractGraph;
-        cost::AbstractMatrix{U},
-        orig::T
-    ) where {T<:Integer,U<:Real}
+        cost::AbstractMatrix{Float64},
+        orig::Integer
+    )
         shortest_paths = dijkstra_shortest_paths(graph, orig, cost)
-        new{T}(shortest_paths.parents::Vector{T})
+        new(shortest_paths.parents)
     end
 end
 
-function (shortest_paths::ShortestPaths)(dest::T) where {T<:Integer}
+# struct ShortestPaths{T<:Integer}
+#     parents::Vector{T}
+#     function ShortestPaths(
+#         graph::AbstractGraph;
+#         cost::AbstractMatrix{U},
+#         orig::T
+#     ) where {T<:Integer,U<:Real}
+#         shortest_paths = dijkstra_shortest_paths(graph, orig, cost)
+#         new{T}(shortest_paths.parents::Vector{T})
+#     end
+# end
+
+function (shortest_paths::ShortestPaths)(dest::Int)
     parents = shortest_paths.parents
     n_nodes = size(parents, 1)
 
-    function shortest_path_nodes(dest::T) where {T<:Integer}
+    function shortest_path_nodes(dest::Int)
         parent = parents[dest]
 
         if parent == 0
-            return Vector{T}()
+            return Int[]
         else
             return [shortest_path_nodes(parent); parent]
         end
@@ -68,3 +82,25 @@ function (shortest_paths::ShortestPaths)(dest::T) where {T<:Integer}
     to = [from[2:end]; dest]
     sparse(from, to, 1.0, n_nodes, n_nodes)
 end
+
+# function (shortest_paths::ShortestPaths)(dest::T) where {T<:Integer}
+#     parents = shortest_paths.parents
+#     n_nodes = size(parents, 1)
+
+#     function shortest_path_nodes(dest::T) where {T<:Integer}
+#         parent = parents[dest]
+
+#         if parent == 0
+#             return Vector{T}()
+#         else
+#             return [shortest_path_nodes(parent); parent]
+#         end
+#     end
+
+#     from = shortest_path_nodes(dest)
+
+#     @assert !isempty(from)
+
+#     to = [from[2:end]; dest]
+#     sparse(from, to, 1.0, n_nodes, n_nodes)
+# end

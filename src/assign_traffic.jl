@@ -1,7 +1,7 @@
 struct TrafficAssigResults
     traffic::TrafficImpl
     flow::Vector{Float64}
-    logs::TrafficAssigLogs
+    logs::AbstractTrafficAssigLogs
 end
 
 function assign_traffic(

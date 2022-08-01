@@ -11,32 +11,32 @@ struct Traffic
     trips::DataFrame
     network::DataFrame
     options::TrafficOptions
+end
 
-    function Traffic(
-        trips::DataFrame,
-        network::DataFrame;
-        options::TrafficOptions=TrafficOptions()
-    )
-        # TODO: Support for non BPR functions.
-        link_performance = options.link_performance
-        @assert link_performance in [:BPR]
+function Traffic(
+    trips::DataFrame,
+    network::DataFrame;
+    options::TrafficOptions=TrafficOptions()
+)
+    # TODO: Support for non BPR functions.
+    link_performance = options.link_performance
+    @assert link_performance in [:BPR]
 
-        if link_performance == :BPR
-            trips = trips |>
-                    x -> select(x, :orig, :dest, :trips)
-            network = network |>
-                      x -> select(x, :from, :to, :free_flow_time, :capacity, :alpha, :beta, :toll, :length)
-        end
-
-        n_nodes = max([network.from; network.to]...)
-
-        return new(
-            n_nodes,
-            trips,
-            network,
-            options
-        )
+    if link_performance == :BPR
+        trips = trips |>
+                x -> select(x, :orig, :dest, :trips)
+        network = network |>
+                  x -> select(x, :from, :to, :free_flow_time, :capacity, :alpha, :beta, :toll, :length)
     end
+
+    n_nodes = max([network.from; network.to]...)
+
+    Traffic(
+        n_nodes,
+        trips,
+        network,
+        options
+    )
 end
 
 function Base.show(
