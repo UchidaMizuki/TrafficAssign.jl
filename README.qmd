@@ -11,6 +11,7 @@ TrafficAssig is a Julia package for...
 ## Examples
 
 ```{julia}
+#| label: Simple traffic assignment
 #| warning: false
 using TrafficAssig
 
@@ -19,8 +20,9 @@ assign_traffic(tntp)
 ```
 
 ```{julia}
-#| output: false
-tntp = load_tntp("Barcelona")
+#| label: Compare algorithms
+#| eval: false
+tntp = load_tntp("GoldCoast")
 
 res_FW = assign_traffic(tntp, algorithm=FrankWolfe())
 res_CFW = assign_traffic(tntp, algorithm=ConjugateFrankWolfe())
@@ -28,28 +30,74 @@ res_BFW = assign_traffic(tntp, algorithm=BiconjugateFrankWolfe())
 ```
 
 ```{julia}
+#| label: Save Frank-Wolfe results
+#| eval: false
 #| echo: false
+using DataFrames
+using CSV
+
+if !isdir("README_files/frank-wolfe-results")
+    mkpath("README_files/frank-wolfe-results")
+end
+
+function frank_wolfe_results(res)
+    traffic = res.traffic
+    flow = DataFrame(
+        from=traffic.from,
+        to=traffic.to,
+        flow=res.flow
+    )
+
+    logs = res.logs
+    logs = DataFrame(
+        exec_time=logs.exec_time,
+        objective=logs.objective,
+        relative_gap=logs.relative_gap
+    )
+
+    return flow, logs
+end
+
+flow_FW, logs_FW = frank_wolfe_results(res_FW)
+flow_CFW, logs_CFW = frank_wolfe_results(res_CFW)
+flow_BFW, logs_BFW = frank_wolfe_results(res_BFW)
+
+CSV.write("README_files/frank-wolfe-results/flow_FW.csv", flow_FW)
+CSV.write("README_files/frank-wolfe-results/flow_CFW.csv", flow_CFW)
+CSV.write("README_files/frank-wolfe-results/flow_BFW.csv", flow_BFW)
+
+CSV.write("README_files/frank-wolfe-results/logs_FW.csv", logs_FW)
+CSV.write("README_files/frank-wolfe-results/logs_CFW.csv", logs_CFW)
+CSV.write("README_files/frank-wolfe-results/logs_BFW.csv", logs_BFW)
+```
+
+```{julia}
+#| label: Save a figure
+#| echo: false
+#| echo: false
+using CSV
+using DataFrames
 using Plots
 
+logs_FW = CSV.read("README_files/frank-wolfe-results/logs_FW.csv", DataFrame)
+logs_CFW = CSV.read("README_files/frank-wolfe-results/logs_CFW.csv", DataFrame)
+logs_BFW = CSV.read("README_files/frank-wolfe-results/logs_BFW.csv", DataFrame)
 plt = plot(
-    res_FW.logs.exec_time, res_FW.logs.relative_gap, 
+    1:nrow(logs_FW), logs_FW.relative_gap, 
     yaxis=:log,
-    xlabel="Execution Time [sec]",
+    xlabel="Iteration",
+    # xlabel="Execution Time [sec]",
     ylabel="Relative Gap",
     label="Frank-Wolfe"
 )
 plot!(
-    plt, res_CFW.logs.exec_time, res_CFW.logs.relative_gap, 
+    1:nrow(logs_CFW), logs_CFW.relative_gap, 
     label="Conjugate Frank-Wolfe"
 )
 plot!(
-    plt, res_BFW.logs.exec_time, res_BFW.logs.relative_gap, 
-    label="Biconjugate Frank-Wolfe"
+    1:nrow(logs_BFW), logs_BFW.relative_gap, 
+    label="Conjugate Frank-Wolfe"
 )
 ```
 
-## Comparisons
-
-```{julia}
-
-```
+<!-- ## Comparisons -->
