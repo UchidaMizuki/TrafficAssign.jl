@@ -406,7 +406,7 @@ function trace_logs(
     obj = last(logs.objective)
     relative_gap = last(logs.relative_gap)
     exec_time = last(logs.exec_time)
-    @printf "Iteration: %7d, Objective: %13f, Relative-Gap: %13f, Execution-Time: %13f\n" iter obj relative_gap exec_time
+    @printf "Iteration: %7d, Objective: %13f, Relative-Gap: %7f, Execution-Time: %13.3f\n" iter obj relative_gap exec_time
 end
 
 # Truncated Quadratic Programming method
