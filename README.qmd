@@ -96,7 +96,7 @@ plot!(
 )
 plot!(
     1:nrow(logs_BFW), logs_BFW.relative_gap, 
-    label="Conjugate Frank-Wolfe"
+    label="Biconjugate Frank-Wolfe"
 )
 ```
 
