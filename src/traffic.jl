@@ -1,32 +1,19 @@
-# Traffic
-@kwdef struct TrafficOptions
-    link_performance::Symbol = :BPR
-    first_thru_node::Int = 1
-    toll_factor::Float64 = 0.0
-    length_factor::Float64 = 0.0
-end
-
 struct Traffic
     n_nodes::Int
     trips::DataFrame
     network::DataFrame
-    options::TrafficOptions
+    link_performance::AbstractLinkPerformance
 end
 
 function Traffic(
     trips::DataFrame,
     network::DataFrame;
-    options::TrafficOptions=TrafficOptions()
+    link_performance::AbstractLinkPerformance=BPR()
 )
     # TODO: Support for non BPR functions.
-    link_performance = options.link_performance
-    @assert link_performance in [:BPR]
-
-    if link_performance == :BPR
-        trips = trips |>
-                x -> select(x, :orig, :dest, :trips)
-        network = network |>
-                  x -> select(x, :from, :to, :free_flow_time, :capacity, :alpha, :beta, :toll, :length)
+    if typeof(link_performance) == BPR
+        select!(trips, :orig, :dest, :trips)
+        select!(network, :from, :to, :free_flow_time, :capacity, :alpha, :beta, :toll, :length)
     end
 
     n_nodes = max([network.from; network.to]...)
@@ -35,7 +22,7 @@ function Traffic(
         n_nodes,
         trips,
         network,
-        options
+        link_performance
     )
 end
 

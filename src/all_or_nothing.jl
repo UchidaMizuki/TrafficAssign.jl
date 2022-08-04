@@ -16,7 +16,7 @@ function all_or_nothing(
         trips_orig = trips[orig, :]
 
         if nnz(trips_orig) > 0
-            shortest_paths = ShortestPaths(
+            shortest_paths = DijkstraShortestPaths(
                 graph,
                 cost=cost,
                 orig=orig
@@ -36,9 +36,9 @@ end
 
 
 # Shortest paths
-struct ShortestPaths
+struct DijkstraShortestPaths
     parents::Vector{Int}
-    function ShortestPaths(
+    function DijkstraShortestPaths(
         graph::AbstractGraph;
         cost::AbstractMatrix{Float64},
         orig::Integer
@@ -48,9 +48,9 @@ struct ShortestPaths
     end
 end
 
-# struct ShortestPaths{T<:Integer}
+# struct DijkstraShortestPaths{T<:Integer}
 #     parents::Vector{T}
-#     function ShortestPaths(
+#     function DijkstraShortestPaths(
 #         graph::AbstractGraph;
 #         cost::AbstractMatrix{U},
 #         orig::T
@@ -60,7 +60,7 @@ end
 #     end
 # end
 
-function (shortest_paths::ShortestPaths)(dest::Int)
+function (shortest_paths::DijkstraShortestPaths)(dest::Int)
     parents = shortest_paths.parents
     n_nodes = size(parents, 1)
 
@@ -74,19 +74,6 @@ function (shortest_paths::ShortestPaths)(dest::Int)
         end
     end
 
-    # function shortest_path_nodes(dest::Int, memo::Dict{Int, Vector{Int}}=Dict{Int, Vector{Int}}())
-    #     if dest in keys(memo)
-    #         return memo[dest]
-    #     end
-
-    #     parent = parents[dest]
-
-    #     out = parent == 0 ? Int[] : [shortest_path_nodes(parent, memo); parent]
-    #     memo[dest] = out
-
-    #     return out
-    # end
-
     from = shortest_path_nodes(dest)
 
     @assert !isempty(from)
@@ -95,7 +82,7 @@ function (shortest_paths::ShortestPaths)(dest::Int)
     sparse(from, to, 1.0, n_nodes, n_nodes)
 end
 
-# function (shortest_paths::ShortestPaths)(dest::T) where {T<:Integer}
+# function (shortest_paths::DijkstraShortestPaths)(dest::T) where {T<:Integer}
 #     parents = shortest_paths.parents
 #     n_nodes = size(parents, 1)
 

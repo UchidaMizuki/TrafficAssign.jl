@@ -66,12 +66,15 @@ function load_tntp(
 
     @assert n_zones_trips == n_zones_network
 
-    options = TrafficOptions(
-        first_thru_node=first_thru_node;
+    link_performance = BPR(
+        first_thru_node=first_thru_node,
         kwargs...
     )
 
-    return Traffic(trips, network, options=options)
+    return Traffic(
+        trips, network, 
+        link_performance=link_performance
+    )
 end
 
 function file_tntp(

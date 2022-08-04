@@ -6,19 +6,19 @@ struct TrafficImpl
     
     trips::SparseMatrixCSC{Float64,Int}
     graph::SimpleDiGraph{Int}
-    link_performance::AbstractLinkPerformance
+    link_performance::AbstractLinkPerformanceImpl
 end
 
 function TrafficImpl(traffic::Traffic)
     n_nodes = traffic.n_nodes
+    trips = traffic.trips
     network = traffic.network
 
     from = network.from
     to = network.to
 
     # trips
-    trips = traffic.trips |>
-        x -> filter([:orig, :dest] => (orig, dest) -> orig != dest, x)
+    subset!(trips, [:orig, :dest] => (orig, dest) -> orig .!= dest)
 
     trips = sparse(trips.orig, trips.dest, trips.trips, n_nodes, n_nodes)
     dropzeros!(trips)
@@ -31,13 +31,7 @@ function TrafficImpl(traffic::Traffic)
     end
 
     # link_performance
-    # TODO: Support for non BPR functions.
-    link_performance = traffic.options.link_performance
-    @assert link_performance in [:BPR]
-
-    if link_performance == :BPR
-        link_performance = BPR(traffic)
-    end
+    link_performance = traffic.link_performance(network)
 
     TrafficImpl(
         n_nodes,
