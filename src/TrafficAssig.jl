@@ -3,7 +3,7 @@ module TrafficAssig
 import Base: @kwdef
 
 import DataFrames: DataFrame
-import DataFrames: select
+import DataFrames: select!, subset!
 
 import Distributed: @distributed
 
@@ -23,19 +23,23 @@ import SparseArrays: dropzeros!, findnz, nnz, sparse, spzeros
 import ZipFile: Reader
 
 include("tntp.jl")
-include("traffic.jl")
 include("link_performance.jl")
-include("traffic_impl.jl")
+include("traffic.jl")
+include("link_performance-impl.jl")
+include("traffic-impl.jl")
 include("all_or_nothing.jl")
 include("algorithm.jl")
+include("algorithm-frank_wolfe.jl")
 include("assign_traffic.jl")
 
 export download_tntp, load_tntp
-export TrafficOptions, Traffic
-export BPR
+export AbstractLinkPerformance, BPR
+export Traffic
+export AbstractLinkPerformanceImpl, BPRImpl, link_performance_objective, link_performance_gradient
 export TrafficImpl
-export all_or_nothing, ShortestPaths
-export AbstractTrafficAssigAlgorithm, FrankWolfe, ConjugateFrankWolfe, BiconjugateFrankWolfe, AbstractTrafficAssigLogs, TrafficAssigLogs
+export all_or_nothing, DijkstraShortestPaths
+export AbstractTrafficAssigAlgorithm, AbstractTrafficAssigLogs, TrafficAssigLogs
+export FrankWolfe, ConjugateFrankWolfe, BiconjugateFrankWolfe
 export assign_traffic
 
 end
