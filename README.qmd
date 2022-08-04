@@ -8,7 +8,9 @@ TrafficAssig is a Julia package for...
 1. Load [Transportation Networks](https://github.com/bstabler/TransportationNetworks) data or construct traffic data from data frames.
 1. Traffic assignment with User Equilibrium.
 
-## Examples
+## Load traffic data
+
+You can load [Transportation Networks](https://github.com/bstabler/TransportationNetworks) data ([TNTP](https://www.bgu.ac.il/~bargera/tntp/) format) with `load_tntp()`.
 
 ```{julia}
 #| label: Load traffic data
@@ -20,13 +22,24 @@ tntp = load_tntp("Anaheim")
 ```
 
 ```{julia}
-#| label: Simple traffic assignment
+#| label: Save traffic data
+#| warning: false
+
+
+```
+
+## Traffic assignment
+
+```{julia}
+#| label: Traffic assignment
+#| output: false
 
 res = assign_traffic(tntp)
+res.flow
 ```
 
 ```{julia}
-#| label: Save simple traffic assignment results
+#| label: Save traffic assignment results
 #| echo: false
 
 using DataFrames
@@ -68,6 +81,7 @@ CSV.write("README_files/frank-wolfe-results/Anaheim/logs.csv", logs)
 library(tidyverse)
 library(fs)
 library(sf)
+library(ggspatial)
 
 theme_set(theme_light())
 
@@ -84,9 +98,14 @@ network <- dir_ls(regexp = "^TransportationNetworks[^/]+/Anaheim/anaheim.geojson
 
 ggplot(network,
        aes(color = flow)) +
+  annotation_map_tile(zoomin = -1,
+                      progress = "none") +
   geom_sf() +
-  scale_color_viridis_c(option = "turbo")
+  scale_color_viridis_c(option = "turbo") +
+  labs(caption = "\U00a9 OpenStreetMap contributors")
 ```
+
+## Traffic assignment algorithms
 
 ```{julia}
 #| label: Compare algorithms
@@ -126,18 +145,17 @@ CSV.write("README_files/frank-wolfe-results/GoldCoast/logs_BFW.csv", logs_BFW)
 #| echo: false
 #| output: false
 
-using CSV
-using DataFrames
-using Plots
-
 logs_FW = CSV.read("README_files/frank-wolfe-results/GoldCoast/logs_FW.csv", DataFrame)
 logs_CFW = CSV.read("README_files/frank-wolfe-results/GoldCoast/logs_CFW.csv", DataFrame)
 logs_BFW = CSV.read("README_files/frank-wolfe-results/GoldCoast/logs_BFW.csv", DataFrame)
 ```
 
 ```{julia}
-#| label: plot frank-wolfe results
+#| label: Make a plot frank-wolfe results
 #| echo: false
+#| output: false
+
+using Plots
 
 plt = plot(
     1:nrow(logs_FW), logs_FW.relative_gap, 
@@ -155,6 +173,13 @@ plot!(
     1:nrow(logs_BFW), logs_BFW.relative_gap, 
     label="Biconjugate Frank-Wolfe"
 )
+```
+
+```{julia}
+#| label: Plot frank-wolfe results
+#| echo: false
+
+plt
 ```
 
 <!-- ## Comparisons -->
