@@ -11,34 +11,26 @@ TrafficAssig is a Julia package for...
 ## Examples
 
 ```{julia}
-#| label: Simple traffic assignment
+#| label: Load traffic data
 #| warning: false
+
 using TrafficAssig
 
 tntp = load_tntp("Anaheim")
-assign_traffic(tntp)
 ```
 
 ```{julia}
-#| label: Compare algorithms
-#| eval: false
-tntp = load_tntp("GoldCoast")
+#| label: Simple traffic assignment
 
-res_FW = assign_traffic(tntp, algorithm=FrankWolfe())
-res_CFW = assign_traffic(tntp, algorithm=ConjugateFrankWolfe())
-res_BFW = assign_traffic(tntp, algorithm=BiconjugateFrankWolfe())
+res = assign_traffic(tntp)
 ```
 
 ```{julia}
-#| label: Save Frank-Wolfe results
-#| eval: false
+#| label: Save simple traffic assignment results
 #| echo: false
+
 using DataFrames
 using CSV
-
-if !isdir("README_files/frank-wolfe-results")
-    mkpath("README_files/frank-wolfe-results")
-end
 
 function frank_wolfe_results(res)
     traffic = res.traffic
@@ -58,30 +50,95 @@ function frank_wolfe_results(res)
     return flow, logs
 end
 
+flow, logs = frank_wolfe_results(res)
+
+if !isdir("README_files/frank-wolfe-results/Anaheim")
+    mkpath("README_files/frank-wolfe-results/Anaheim")
+end
+
+CSV.write("README_files/frank-wolfe-results/Anaheim/flow.csv", flow)
+CSV.write("README_files/frank-wolfe-results/Anaheim/logs.csv", logs)
+```
+
+```{r}
+#| label: Plot a network
+#| echo: false
+#| warning: false
+
+library(tidyverse)
+library(fs)
+library(sf)
+
+theme_set(theme_light())
+
+flow <- read_csv("README_files/frank-wolfe-results/Anaheim/flow.csv",
+                 col_types = cols(.default = "n"))
+
+network <- dir_ls(regexp = "^TransportationNetworks[^/]+/Anaheim/anaheim.geojson$", 
+                  recurse = TRUE) |>
+  read_sf() |>
+  select(init_node, term_node) |>
+  left_join(flow,
+            by = c("init_node" = "from",
+                   "term_node" = "to"))
+
+ggplot(network,
+       aes(color = flow)) +
+  geom_sf() +
+  scale_color_viridis_c(option = "turbo")
+```
+
+```{julia}
+#| label: Compare algorithms
+#| eval: false
+
+tntp = load_tntp("GoldCoast")
+
+res_FW = assign_traffic(tntp, algorithm=FrankWolfe())
+res_CFW = assign_traffic(tntp, algorithm=ConjugateFrankWolfe())
+res_BFW = assign_traffic(tntp, algorithm=BiconjugateFrankWolfe())
+```
+
+```{julia}
+#| label: Save Frank-Wolfe results
+#| eval: false
+#| echo: false
+
+if !isdir("README_files/frank-wolfe-results/GoldCoast")
+    mkpath("README_files/frank-wolfe-results/GoldCoast")
+end
+
 flow_FW, logs_FW = frank_wolfe_results(res_FW)
 flow_CFW, logs_CFW = frank_wolfe_results(res_CFW)
 flow_BFW, logs_BFW = frank_wolfe_results(res_BFW)
 
-CSV.write("README_files/frank-wolfe-results/flow_FW.csv", flow_FW)
-CSV.write("README_files/frank-wolfe-results/flow_CFW.csv", flow_CFW)
-CSV.write("README_files/frank-wolfe-results/flow_BFW.csv", flow_BFW)
+CSV.write("README_files/frank-wolfe-results/GoldCoast/flow_FW.csv", flow_FW)
+CSV.write("README_files/frank-wolfe-results/GoldCoast/flow_CFW.csv", flow_CFW)
+CSV.write("README_files/frank-wolfe-results/GoldCoast/flow_BFW.csv", flow_BFW)
 
-CSV.write("README_files/frank-wolfe-results/logs_FW.csv", logs_FW)
-CSV.write("README_files/frank-wolfe-results/logs_CFW.csv", logs_CFW)
-CSV.write("README_files/frank-wolfe-results/logs_BFW.csv", logs_BFW)
+CSV.write("README_files/frank-wolfe-results/GoldCoast/logs_FW.csv", logs_FW)
+CSV.write("README_files/frank-wolfe-results/GoldCoast/logs_CFW.csv", logs_CFW)
+CSV.write("README_files/frank-wolfe-results/GoldCoast/logs_BFW.csv", logs_BFW)
 ```
 
 ```{julia}
-#| label: Save a figure
+#| label: load frank-wolfe results
 #| echo: false
-#| echo: false
+#| output: false
+
 using CSV
 using DataFrames
 using Plots
 
-logs_FW = CSV.read("README_files/frank-wolfe-results/logs_FW.csv", DataFrame)
-logs_CFW = CSV.read("README_files/frank-wolfe-results/logs_CFW.csv", DataFrame)
-logs_BFW = CSV.read("README_files/frank-wolfe-results/logs_BFW.csv", DataFrame)
+logs_FW = CSV.read("README_files/frank-wolfe-results/GoldCoast/logs_FW.csv", DataFrame)
+logs_CFW = CSV.read("README_files/frank-wolfe-results/GoldCoast/logs_CFW.csv", DataFrame)
+logs_BFW = CSV.read("README_files/frank-wolfe-results/GoldCoast/logs_BFW.csv", DataFrame)
+```
+
+```{julia}
+#| label: plot frank-wolfe results
+#| echo: false
+
 plt = plot(
     1:nrow(logs_FW), logs_FW.relative_gap, 
     yaxis=:log,
