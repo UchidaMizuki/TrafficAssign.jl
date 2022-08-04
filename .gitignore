@@ -2,3 +2,4 @@
 *.code-workspace
 TransportationNetworks-*
 .vscode
+rosm.cache

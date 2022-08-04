@@ -10,10 +10,12 @@ TrafficAssig is a Julia package for...
 
 ## Load traffic data
 
-You can load [Transportation Networks](https://github.com/bstabler/TransportationNetworks) data ([TNTP](https://www.bgu.ac.il/~bargera/tntp/) format) with `load_tntp()`.
+`load_tntp()` loads [Transportation Networks](https://github.com/bstabler/TransportationNetworks) data ([TNTP](https://www.bgu.ac.il/~bargera/tntp/) format).
+
+`Traffic()` creates traffic data from trip and network data frames.
 
 ```{julia}
-#| label: Load traffic data
+#| label: load-traffic-data
 #| warning: false
 
 using TrafficAssig
@@ -22,28 +24,64 @@ tntp = load_tntp("Anaheim")
 ```
 
 ```{julia}
-#| label: Save traffic data
-#| warning: false
+#| label: save-traffic-data
+#| eval: false
+#| echo: false
 
+using TrafficAssig
+using CSV
 
+tntp = load_tntp("SiouxFalls")
+
+if !isdir("README_files/traffic-data/SiouxFalls")
+    mkpath("README_files/traffic-data/SiouxFalls")
+end
+
+CSV.write("README_files/traffic-data/SiouxFalls/trips.csv", tntp.trips)
+CSV.write("README_files/traffic-data/SiouxFalls/network.csv", tntp.network)
 ```
+
+<!-- 
+```{julia}
+#| label: load-traffic-data-csv
+#| echo: false
+#| output: false
+
+using CSV
+using DataFrames
+
+trips = CSV.read("README_files/traffic-data/SiouxFalls/trips.csv", DataFrame)
+network = CSV.read("README_files/traffic-data/SiouxFalls/network.csv", DataFrame)
+```
+
+```{julia}
+trips
+network
+
+Traffic(trips, network)
+```
+-->
 
 ## Traffic assignment
 
+`assign_traffic()` solves traffic assignment problems.
+By default, the `BiconjugateFrankWolfe()` algorithm is used.
+
 ```{julia}
-#| label: Traffic assignment
-#| output: false
+#| label: traffic-assignment
 
 res = assign_traffic(tntp)
+```
+
+```{julia}
+#| label: traffic-assignment-flow
 res.flow
 ```
 
 ```{julia}
-#| label: Save traffic assignment results
+#| label: save-traffic-assignment-results
 #| echo: false
-
-using DataFrames
-using CSV
+#| output: false
 
 function frank_wolfe_results(res)
     traffic = res.traffic
@@ -74,14 +112,13 @@ CSV.write("README_files/frank-wolfe-results/Anaheim/logs.csv", logs)
 ```
 
 ```{r}
-#| label: Plot a network
+#| label: plot-a-network
 #| echo: false
 #| warning: false
 
 library(tidyverse)
 library(fs)
 library(sf)
-library(ggspatial)
 
 theme_set(theme_light())
 
@@ -98,8 +135,6 @@ network <- dir_ls(regexp = "^TransportationNetworks[^/]+/Anaheim/anaheim.geojson
 
 ggplot(network,
        aes(color = flow)) +
-  annotation_map_tile(zoomin = -1,
-                      progress = "none") +
   geom_sf() +
   scale_color_viridis_c(option = "turbo") +
   labs(caption = "\U00a9 OpenStreetMap contributors")
@@ -107,10 +142,17 @@ ggplot(network,
 
 ## Traffic assignment algorithms
 
+Now, the following algorithms are available.
+
+- `FrankWolfe()`
+- `ConjugateFrankWolfe()`
+- `BiconjugateFrankWolfe()`
+
 ```{julia}
-#| label: Compare algorithms
+#| label: compare-algorithms
 #| eval: false
 
+# Requires long execution time.
 tntp = load_tntp("GoldCoast")
 
 res_FW = assign_traffic(tntp, algorithm=FrankWolfe())
@@ -119,7 +161,7 @@ res_BFW = assign_traffic(tntp, algorithm=BiconjugateFrankWolfe())
 ```
 
 ```{julia}
-#| label: Save Frank-Wolfe results
+#| label: save-frank-wolfe-results
 #| eval: false
 #| echo: false
 
@@ -141,7 +183,7 @@ CSV.write("README_files/frank-wolfe-results/GoldCoast/logs_BFW.csv", logs_BFW)
 ```
 
 ```{julia}
-#| label: load frank-wolfe results
+#| label: load-frank-wolfe results
 #| echo: false
 #| output: false
 
@@ -151,7 +193,7 @@ logs_BFW = CSV.read("README_files/frank-wolfe-results/GoldCoast/logs_BFW.csv", D
 ```
 
 ```{julia}
-#| label: Make a plot frank-wolfe results
+#| label: make-a-plot-frank-wolfe-results
 #| echo: false
 #| output: false
 
@@ -176,7 +218,7 @@ plot!(
 ```
 
 ```{julia}
-#| label: Plot frank-wolfe results
+#| label: plot-frank-wolfe-results
 #| echo: false
 
 plt
