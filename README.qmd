@@ -20,7 +20,7 @@ TrafficAssig is a Julia package for...
 
 using TrafficAssig
 
-tntp = load_tntp("Anaheim")
+traffic = load_tntp("Anaheim")
 ```
 
 ```{julia}
@@ -31,14 +31,14 @@ tntp = load_tntp("Anaheim")
 using TrafficAssig
 using CSV
 
-tntp = load_tntp("SiouxFalls")
+traffic = load_tntp("SiouxFalls")
 
 if !isdir("README_files/traffic-data/SiouxFalls")
     mkpath("README_files/traffic-data/SiouxFalls")
 end
 
-CSV.write("README_files/traffic-data/SiouxFalls/trips.csv", tntp.trips)
-CSV.write("README_files/traffic-data/SiouxFalls/network.csv", tntp.network)
+CSV.write("README_files/traffic-data/SiouxFalls/trips.csv", traffic.trips)
+CSV.write("README_files/traffic-data/SiouxFalls/network.csv", traffic.network)
 ```
 
 <!-- 
@@ -70,7 +70,7 @@ By default, the `BiconjugateFrankWolfe()` algorithm is used.
 ```{julia}
 #| label: traffic-assignment
 
-res = assign_traffic(tntp)
+res = assign_traffic(traffic)
 ```
 
 ```{julia}
@@ -136,8 +136,7 @@ network <- dir_ls(regexp = "^TransportationNetworks[^/]+/Anaheim/anaheim.geojson
 ggplot(network,
        aes(color = flow)) +
   geom_sf() +
-  scale_color_viridis_c(option = "turbo") +
-  labs(caption = "\U00a9 OpenStreetMap contributors")
+  scale_color_viridis_c(option = "turbo")
 ```
 
 ## Traffic assignment algorithms
@@ -153,11 +152,11 @@ Now, the following algorithms are available.
 #| eval: false
 
 # Requires long execution time.
-tntp = load_tntp("GoldCoast")
+traffic = load_tntp("GoldCoast")
 
-res_FW = assign_traffic(tntp, algorithm=FrankWolfe())
-res_CFW = assign_traffic(tntp, algorithm=ConjugateFrankWolfe())
-res_BFW = assign_traffic(tntp, algorithm=BiconjugateFrankWolfe())
+res_FW = assign_traffic(traffic, algorithm=FrankWolfe())
+res_CFW = assign_traffic(traffic, algorithm=ConjugateFrankWolfe())
+res_BFW = assign_traffic(traffic, algorithm=BiconjugateFrankWolfe())
 ```
 
 ```{julia}
