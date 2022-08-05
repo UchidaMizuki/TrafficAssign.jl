@@ -12,7 +12,7 @@ function all_or_nothing(
 
     cost = sparse(from, to, cost, n_nodes, n_nodes)
     
-    out = @distributed (+) for orig in collect(axes(trips, 1))
+    out = @distributed (+) for orig ∈ collect(axes(trips, 1))
         trips_orig = trips[orig, :]
 
         if nnz(trips_orig) > 0
@@ -22,7 +22,7 @@ function all_or_nothing(
                 orig=orig
             )
 
-            @distributed (+) for (dest, trip) in collect(zip(findnz(trips_orig)...))
+            @distributed (+) for (dest, trip) ∈ collect(zip(findnz(trips_orig)...))
                 trip * shortest_paths(dest)
             end
         else
@@ -30,7 +30,7 @@ function all_or_nothing(
         end
     end
 
-    return [out[i] for i in zip(from, to)]
+    return [out[i] for i ∈ zip(from, to)]
 end
 
 

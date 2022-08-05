@@ -18,7 +18,7 @@ function download_tntp(
 
         reader = Reader(file)
 
-        for file in reader.files
+        for file ∈ reader.files
             file_name = joinpath(path, file.name)
 
             if endswith(file_name, "/")
@@ -135,7 +135,7 @@ function load_tntp_trips(file_trips)
                 else
                     line = split(line, r";\s*", keepempty=false)
 
-                    for dest_trips in line
+                    for dest_trips ∈ line
                         dest_trips = split(dest_trips, ":")
 
                         idx += 1

@@ -9,7 +9,7 @@ function (algorithm::FrankWolfe)(
         start_logs()
     end
 
-    for iter in 1:algorithm.max_iter
+    for iter ∈ 1:algorithm.max_iter
         flow_FW, Δflow_FW = dir_FW(traffic, flow)
         update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
@@ -59,7 +59,7 @@ function (algorithm::ConjugateFrankWolfe)(
         start_logs()
     end
 
-    for iter in 1:algorithm.max_iter
+    for iter ∈ 1:algorithm.max_iter
         flow_FW, Δflow_FW = dir_FW(traffic, flow)
         update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
@@ -135,7 +135,7 @@ function (algorithm::BiconjugateFrankWolfe)(
         start_logs()
     end
 
-    for iter in 1:algorithm.max_iter
+    for iter ∈ 1:algorithm.max_iter
         flow_FW, Δflow_FW = dir_FW(traffic, flow)
         update_best_lower_bound!(logs, traffic, flow, flow_FW)
 

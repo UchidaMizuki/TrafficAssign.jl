@@ -26,7 +26,7 @@ function TrafficImpl(traffic::Traffic)
     # graph
     graph = DiGraph(n_nodes)
 
-    for (from, to) in zip(from, to)
+    for (from, to) ∈ zip(from, to)
         add_edge!(graph, from, to)
     end
 
