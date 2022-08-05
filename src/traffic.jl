@@ -13,7 +13,9 @@ function Traffic(
     # TODO: Support for non BPR functions.
     if typeof(link_performance) == BPR
         select!(trips, :orig, :dest, :trips)
-        select!(network, :from, :to, :free_flow_time, :capacity, :alpha, :beta, :toll, :length)
+    
+        names_network = filter(x -> x ∈ [:alpha, :beta, :toll, :length], propertynames(network))
+        select!(network, :from, :to, :free_flow_time, :capacity, names_network...)
     end
 
     n_nodes = max([network.from; network.to]...)
