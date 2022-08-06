@@ -27,7 +27,8 @@ include("link_performance.jl")
 include("traffic.jl")
 include("link_performance-impl.jl")
 include("traffic-impl.jl")
-include("all_or_nothing.jl")
+include("method.jl")
+include("method-all_or_nothing.jl")
 include("algorithm.jl")
 include("algorithm-frank_wolfe.jl")
 include("assign_traffic.jl")
@@ -37,7 +38,8 @@ export AbstractLinkPerformance, BPR
 export Traffic
 export AbstractLinkPerformanceImpl, BPRImpl, link_performance_objective, link_performance_gradient
 export TrafficImpl
-export all_or_nothing, DijkstraShortestPaths
+export AbstractTrafficAssigMethod, DijkstraShortestPaths
+export AllOrNothing
 export AbstractTrafficAssigAlgorithm, AbstractTrafficAssigLogs, TrafficAssigLogs
 export FrankWolfe, ConjugateFrankWolfe, BiconjugateFrankWolfe
 export assign_traffic

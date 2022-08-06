@@ -10,7 +10,10 @@ function (algorithm::FrankWolfe)(
     end
 
     for iter ∈ 1:algorithm.max_iter
-        flow_FW, Δflow_FW = dir_FW(traffic, flow)
+        flow_FW, Δflow_FW = dir_FW(
+            traffic, flow,
+            assignment_method=algorithm.assignment_method
+        )
         update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
         τ, logs.upper_bound = one_dimensional_search(
@@ -49,7 +52,7 @@ function (algorithm::ConjugateFrankWolfe)(
     Δflow_FW = Vector{Float64}(undef, n_edges) # d_k^FW
     Δflow_CFW = Vector{Float64}(undef, n_edges) # d_k^CFW
 
-    δ = algorithm.δ
+    δ = algorithm.delta
     τ = 1.0
 
     step_FW = :FW
@@ -60,7 +63,10 @@ function (algorithm::ConjugateFrankWolfe)(
     end
 
     for iter ∈ 1:algorithm.max_iter
-        flow_FW, Δflow_FW = dir_FW(traffic, flow)
+        flow_FW, Δflow_FW = dir_FW(
+            traffic, flow,
+            assignment_method=algorithm.assignment_method
+        )
         update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
         if step_FW == :FW
@@ -123,7 +129,7 @@ function (algorithm::BiconjugateFrankWolfe)(
     Δflow_BFW = Vector{Float64}(undef, n_edges) # d_k^BFW
     Δflow_BFW_pred = Vector{Float64}(undef, n_edges) # d_{k-1}^BFW
 
-    δ = algorithm.δ
+    δ = algorithm.delta
 
     τ = 1.0
     τ_pred = 1.0
@@ -136,7 +142,10 @@ function (algorithm::BiconjugateFrankWolfe)(
     end
 
     for iter ∈ 1:algorithm.max_iter
-        flow_FW, Δflow_FW = dir_FW(traffic, flow)
+        flow_FW, Δflow_FW = dir_FW(
+            traffic, flow,
+            assignment_method=algorithm.assignment_method
+        )
         update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
         if step_FW == :FW
@@ -207,10 +216,11 @@ end
 
 function dir_FW(
     traffic::TrafficImpl,
-    flow::Vector{Float64}
+    flow::Vector{Float64};
+    assignment_method::AbstractTrafficAssigMethod
 )
     cost = traffic.link_performance(flow)
-    flow_FW = all_or_nothing(traffic, cost)
+    flow_FW = assignment_method(traffic, cost)
     Δflow_FW = flow_FW - flow
 
     return flow_FW, Δflow_FW

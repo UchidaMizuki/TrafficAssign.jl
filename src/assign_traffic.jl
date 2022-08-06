@@ -22,7 +22,7 @@ function assign_traffic(
     algorithm::AbstractTrafficAssigAlgorithm=BiconjugateFrankWolfe()
 )
     cost = traffic.link_performance(flow_init)
-    flow = all_or_nothing(traffic, cost)
+    flow = algorithm.assignment_method(traffic, cost)
 
     flow, logs = algorithm(traffic, flow)
 

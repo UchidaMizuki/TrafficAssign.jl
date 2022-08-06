@@ -1,26 +1,37 @@
 abstract type AbstractTrafficAssigAlgorithm end
 
+# frank-wolfe
 @kwdef struct FrankWolfe <: AbstractTrafficAssigAlgorithm
+    assignment_method::AbstractTrafficAssigMethod = AllOrNothing()
     search_method::AbstractOptimizer = GoldenSection()
+
     tol::Float64 = 1e-4
     max_iter = 1_000
     trace::Bool = true
 end
 
 @kwdef struct ConjugateFrankWolfe <: AbstractTrafficAssigAlgorithm
+    assignment_method::AbstractTrafficAssigMethod = AllOrNothing()
     search_method::AbstractOptimizer = GoldenSection()
-    δ::Float64 = 1e-6
+
+    delta::Float64 = 1e-6
     tol::Float64 = 1e-4
     max_iter = 1_000
     trace::Bool = true
 end
 
 @kwdef struct BiconjugateFrankWolfe <: AbstractTrafficAssigAlgorithm
+    assignment_method::AbstractTrafficAssigMethod = AllOrNothing()
     search_method::AbstractOptimizer = GoldenSection()
-    δ::Float64 = 1e-6
+    
+    delta::Float64 = 1e-6
     tol::Float64 = 1e-4
     max_iter = 1_000
     trace::Bool = true
+end
+
+@kwdef struct SimplicialDecomposition <: AbstractTrafficAssigAlgorithm
+    # TODO
 end
 
 abstract type AbstractTrafficAssigLogs end
