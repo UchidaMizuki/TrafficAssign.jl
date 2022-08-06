@@ -1,42 +1,47 @@
-abstract type AbstractTrafficAssigAlgorithm end
+abstract type AbstractTrafficAssignAlgorithm end
 
 # frank-wolfe
-@kwdef struct FrankWolfe <: AbstractTrafficAssigAlgorithm
-    assignment_method::AbstractTrafficAssigMethod = AllOrNothing()
+@kwdef struct FrankWolfe <: AbstractTrafficAssignAlgorithm
+    assign_method::AbstractTrafficAssignMethod = AllOrNothing()
     search_method::AbstractOptimizer = GoldenSection()
-
     tol::Float64 = 1e-4
     max_iter = 1_000
     trace::Bool = true
 end
 
-@kwdef struct ConjugateFrankWolfe <: AbstractTrafficAssigAlgorithm
-    assignment_method::AbstractTrafficAssigMethod = AllOrNothing()
-    search_method::AbstractOptimizer = GoldenSection()
-
+@kwdef struct ConjugateFrankWolfe <: AbstractTrafficAssignAlgorithm
     delta::Float64 = 1e-6
-    tol::Float64 = 1e-4
-    max_iter = 1_000
-    trace::Bool = true
-end
-
-@kwdef struct BiconjugateFrankWolfe <: AbstractTrafficAssigAlgorithm
-    assignment_method::AbstractTrafficAssigMethod = AllOrNothing()
+    assign_method::AbstractTrafficAssignMethod = AllOrNothing()
     search_method::AbstractOptimizer = GoldenSection()
-    
-    delta::Float64 = 1e-6
     tol::Float64 = 1e-4
     max_iter = 1_000
     trace::Bool = true
 end
 
-@kwdef struct SimplicialDecomposition <: AbstractTrafficAssigAlgorithm
-    # TODO
+@kwdef struct BiconjugateFrankWolfe <: AbstractTrafficAssignAlgorithm
+    delta::Float64 = 1e-6
+    assign_method::AbstractTrafficAssignMethod = AllOrNothing()
+    search_method::AbstractOptimizer = GoldenSection()
+    tol::Float64 = 1e-4
+    max_iter = 1_000
+    trace::Bool = true
 end
 
-abstract type AbstractTrafficAssigLogs end
+@kwdef struct RestrictedSimplicialDecomposition <: AbstractTrafficAssignAlgorithm
+    opt_model::Model = Model(optimizer_with_attributes(Ipopt.Optimizer, "print_level" => 0))
+    max_points::Int = 5
+    assign_method::AbstractTrafficAssignMethod = AllOrNothing()
+    search_method::AbstractOptimizer = GoldenSection()
+    tol::Float64 = 1e-4
+    max_iter = 1_000
+    trace::Bool = true
+end
 
-@kwdef mutable struct TrafficAssigLogs <: AbstractTrafficAssigLogs
+
+
+abstract type AbstractTrafficAssignLogs end
+
+@kwdef mutable struct TrafficAssignLogs <: AbstractTrafficAssignLogs
     best_lower_bound::Float64 = -Inf64
     upper_bound::Float64 = 0.0
     objective::Vector{Float64} = Float64[]
@@ -86,7 +91,7 @@ function start_logs()
 end
 
 function update_best_lower_bound!(
-    logs::AbstractTrafficAssigLogs,
+    logs::AbstractTrafficAssignLogs,
     traffic::TrafficImpl,
     flow::Vector{Float64},
     flow_end::Vector{Float64}
@@ -104,13 +109,13 @@ function update_best_lower_bound!(
     return logs
 end
 
-function update_objective!(logs::AbstractTrafficAssigLogs)
+function update_objective!(logs::AbstractTrafficAssignLogs)
     push!(logs.objective, logs.upper_bound)
 
     return logs
 end
 
-function update_relative_gap!(logs::AbstractTrafficAssigLogs)
+function update_relative_gap!(logs::AbstractTrafficAssignLogs)
     best_lower_bound = logs.best_lower_bound
 
     gap = logs.upper_bound - best_lower_bound
@@ -122,7 +127,7 @@ function update_relative_gap!(logs::AbstractTrafficAssigLogs)
     return logs
 end
 
-function update_exec_time!(logs::AbstractTrafficAssigLogs)
+function update_exec_time!(logs::AbstractTrafficAssignLogs)
     push!(logs.exec_time, time() - logs.exec_time_start)
 
     return logs
@@ -130,7 +135,7 @@ end
 
 function trace_logs(
     iter::Int,
-    logs::AbstractTrafficAssigLogs
+    logs::AbstractTrafficAssignLogs
 )
     obj = last(logs.objective)
     relative_gap = last(logs.relative_gap)

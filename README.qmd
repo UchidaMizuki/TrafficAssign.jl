@@ -1,9 +1,9 @@
 ---
-title: "TrafficAssig.jl"
+title: "TrafficAssign.jl"
 format: gfm
 ---
 
-TrafficAssig is a Julia package for...
+TrafficAssign is a Julia package for...
 
 1. Load [Transportation Networks](https://github.com/bstabler/TransportationNetworks) data or construct traffic data from data frames.
 1. Traffic assignment with User Equilibrium.
@@ -18,7 +18,7 @@ TrafficAssig is a Julia package for...
 #| label: load-traffic-data
 #| warning: false
 
-using TrafficAssig
+using TrafficAssign
 
 traffic = load_tntp("Anaheim")
 ```
@@ -28,7 +28,7 @@ traffic = load_tntp("Anaheim")
 #| eval: false
 #| echo: false
 
-using TrafficAssig
+using TrafficAssign
 using CSV
 
 traffic = load_tntp("SiouxFalls")
@@ -223,4 +223,7 @@ plot!(
 plt
 ```
 
-<!-- ## Comparisons -->
+## References
+
+- [Maria Mitradjieva, Per Olov Lindberg, (2012) The Stiff Is Moving—Conjugate Direction Frank-Wolfe Methods with Applications to Traffic Assignment*. Transportation Science 47(2):280-293.](https://doi.org/10.1287/trsc.1120.0409)
+- [Hearn, D.W., Lawphongpanich, S., Ventura, J. (1987). Restricted simplicial decomposition: Computation and extensions. In: Hoffman, K.L., Jackson, R.H.F., Telgen, J. (eds) Computation Mathematical Programming. Mathematical Programming Studies, vol 31. Springer, Berlin, Heidelberg.](https://doi.org/10.1007/BFb0121181)

@@ -1,6 +1,6 @@
-abstract type AbstractTrafficAssigMethod end
+abstract type AbstractTrafficAssignMethod end
 
-struct AllOrNothing <: AbstractTrafficAssigMethod end
+struct AllOrNothing <: AbstractTrafficAssignMethod end
 
 
 

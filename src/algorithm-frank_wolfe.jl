@@ -2,9 +2,7 @@ function (algorithm::FrankWolfe)(
     traffic::TrafficImpl,
     flow::Vector{Float64}
 )
-    link_performance = traffic.link_performance
-
-    logs = TrafficAssigLogs()
+    logs = TrafficAssignLogs()
     if algorithm.trace
         start_logs()
     end
@@ -12,12 +10,12 @@ function (algorithm::FrankWolfe)(
     for iter ∈ 1:algorithm.max_iter
         flow_FW, Δflow_FW = dir_FW(
             traffic, flow,
-            assignment_method=algorithm.assignment_method
+            assign_method=algorithm.assign_method
         )
         update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
         τ, logs.upper_bound = one_dimensional_search(
-            link_performance, flow, Δflow_FW,
+            traffic.link_performance, flow, Δflow_FW,
             search_method=algorithm.search_method
         )
         update_objective!(logs)
@@ -42,8 +40,6 @@ function (algorithm::ConjugateFrankWolfe)(
     traffic::TrafficImpl,
     flow::Vector{Float64}
 )
-    link_performance = traffic.link_performance
-
     n_edges = size(flow, 1)
 
     flow_FW = Vector{Float64}(undef, n_edges) # y_k^FW
@@ -52,12 +48,13 @@ function (algorithm::ConjugateFrankWolfe)(
     Δflow_FW = Vector{Float64}(undef, n_edges) # d_k^FW
     Δflow_CFW = Vector{Float64}(undef, n_edges) # d_k^CFW
 
+    tol = algorithm.tol
     δ = algorithm.delta
     τ = 1.0
 
     step_FW = :FW
 
-    logs = TrafficAssigLogs()
+    logs = TrafficAssignLogs()
     if algorithm.trace
         start_logs()
     end
@@ -65,7 +62,7 @@ function (algorithm::ConjugateFrankWolfe)(
     for iter ∈ 1:algorithm.max_iter
         flow_FW, Δflow_FW = dir_FW(
             traffic, flow,
-            assignment_method=algorithm.assignment_method
+            assign_method=algorithm.assign_method
         )
         update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
@@ -92,7 +89,7 @@ function (algorithm::ConjugateFrankWolfe)(
             link_performance, flow, Δflow_CFW,
             search_method=algorithm.search_method
         )
-        if τ > 1 - δ
+        if τ > 1 - tol
             step_FW = :FW
         end
         update_objective!(logs)
@@ -105,7 +102,7 @@ function (algorithm::ConjugateFrankWolfe)(
             trace_logs(iter, logs)
         end
 
-        if last(logs.relative_gap) < algorithm.tol
+        if last(logs.relative_gap) < tol
             break
         end
     end
@@ -117,8 +114,6 @@ function (algorithm::BiconjugateFrankWolfe)(
     traffic::TrafficImpl,
     flow::Vector{Float64}
 )
-    link_performance = traffic.link_performance
-
     n_edges = size(flow, 1)
 
     flow_FW = Vector{Float64}(undef, n_edges) # y_k^FW
@@ -129,6 +124,7 @@ function (algorithm::BiconjugateFrankWolfe)(
     Δflow_BFW = Vector{Float64}(undef, n_edges) # d_k^BFW
     Δflow_BFW_pred = Vector{Float64}(undef, n_edges) # d_{k-1}^BFW
 
+    tol = algorithm.tol
     δ = algorithm.delta
 
     τ = 1.0
@@ -136,7 +132,7 @@ function (algorithm::BiconjugateFrankWolfe)(
 
     step_FW = :FW
 
-    logs = TrafficAssigLogs()
+    logs = TrafficAssignLogs()
     if algorithm.trace
         start_logs()
     end
@@ -144,7 +140,7 @@ function (algorithm::BiconjugateFrankWolfe)(
     for iter ∈ 1:algorithm.max_iter
         flow_FW, Δflow_FW = dir_FW(
             traffic, flow,
-            assignment_method=algorithm.assignment_method
+            assign_method=algorithm.assign_method
         )
         update_best_lower_bound!(logs, traffic, flow, flow_FW)
 
@@ -193,7 +189,7 @@ function (algorithm::BiconjugateFrankWolfe)(
             link_performance, flow, Δflow_BFW,
             search_method=algorithm.search_method
         )
-        if τ > 1 - δ
+        if τ > 1 - tol
             step_FW = :FW
         end
         update_objective!(logs)
@@ -206,7 +202,7 @@ function (algorithm::BiconjugateFrankWolfe)(
             trace_logs(iter, logs)
         end
 
-        if last(logs.relative_gap) < algorithm.tol
+        if last(logs.relative_gap) < tol
             break
         end
     end
@@ -217,10 +213,10 @@ end
 function dir_FW(
     traffic::TrafficImpl,
     flow::Vector{Float64};
-    assignment_method::AbstractTrafficAssigMethod
+    assign_method::AbstractTrafficAssignMethod
 )
     cost = traffic.link_performance(flow)
-    flow_FW = assignment_method(traffic, cost)
+    flow_FW = assign_method(traffic, cost)
     Δflow_FW = flow_FW - flow
 
     return flow_FW, Δflow_FW
@@ -342,35 +338,4 @@ end
 #         flow_end=flow_end,
 #         search_method=search_method
 #     )
-# end
-
-# Simplicial Decomposition method
-# function simplicial_decomposition(
-#     traffic::TrafficImpl;
-#     flow::Vector{Float64},
-#     max_elems::Int=5
-# )
-#     link_performance = traffic.link_performance
-
-#     cost = link_performance(flow)
-#     flow_end = all_or_nothing(
-#         traffic,
-#         cost=cost
-#     )
-
-#     if cost' * (flow_end - flow) >= 0.0
-#         obj = objective(link_performance, flow)
-
-#         return flow, obj
-#     end
-
-#     if size(elems, 1) < max_elems
-#         push!(elems, flow_end)
-#     else
-#         deleteat!(elems, argmin(weights))
-#         push!(elems, flow_end)
-#         elem = flow
-#     end
-
-
 # end

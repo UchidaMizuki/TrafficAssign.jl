@@ -1,4 +1,4 @@
-module TrafficAssig
+module TrafficAssign
 
 import Base: @kwdef
 
@@ -10,7 +10,11 @@ import Distributed: @distributed
 import Graphs: AbstractGraph, DiGraph, SimpleGraphs.SimpleDiGraph
 import Graphs: add_edge!, dijkstra_shortest_paths
 
-# import Memoize: @memoize
+import Ipopt
+
+import JuMP: Model
+import JuMP: optimize!, optimizer_with_attributes
+import JuMP: @constraint, @objective, @variable
 
 import Optim: AbstractOptimizer, GoldenSection
 import Optim: optimize
@@ -38,10 +42,10 @@ export AbstractLinkPerformance, BPR
 export Traffic
 export AbstractLinkPerformanceImpl, BPRImpl, link_performance_objective, link_performance_gradient
 export TrafficImpl
-export AbstractTrafficAssigMethod, DijkstraShortestPaths
+export AbstractTrafficAssignMethod, DijkstraShortestPaths
 export AllOrNothing
-export AbstractTrafficAssigAlgorithm, AbstractTrafficAssigLogs, TrafficAssigLogs
-export FrankWolfe, ConjugateFrankWolfe, BiconjugateFrankWolfe
+export AbstractTrafficAssignAlgorithm, AbstractTrafficAssignLogs, TrafficAssignLogs
+export FrankWolfe, ConjugateFrankWolfe, BiconjugateFrankWolfe, RestrictedSimplicialDecomposition
 export assign_traffic
 
 end
