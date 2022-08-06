@@ -28,8 +28,8 @@ end
 end
 
 @kwdef struct RestrictedSimplicialDecomposition <: AbstractTrafficAssignAlgorithm
-    opt_model::Model = Model(optimizer_with_attributes(Ipopt.Optimizer, "print_level" => 0))
     max_points::Int = 5
+    optimizer = optimizer_with_attributes(Ipopt.Optimizer, "print_level" => 0)
     assign_method::AbstractTrafficAssignMethod = AllOrNothing()
     search_method::AbstractOptimizer = GoldenSection()
     tol::Float64 = 1e-4

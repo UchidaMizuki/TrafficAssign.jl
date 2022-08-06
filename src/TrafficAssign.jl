@@ -13,7 +13,7 @@ import Graphs: add_edge!, dijkstra_shortest_paths
 import Ipopt
 
 import JuMP: Model
-import JuMP: optimize!, optimizer_with_attributes
+import JuMP: optimize!, optimizer_with_attributes, value, set_optimizer
 import JuMP: @constraint, @objective, @variable
 
 import Optim: AbstractOptimizer, GoldenSection
@@ -35,6 +35,7 @@ include("method.jl")
 include("method-all_or_nothing.jl")
 include("algorithm.jl")
 include("algorithm-frank_wolfe.jl")
+include("algorithm-simplicial_decomposition.jl")
 include("assign_traffic.jl")
 
 export download_tntp, load_tntp
