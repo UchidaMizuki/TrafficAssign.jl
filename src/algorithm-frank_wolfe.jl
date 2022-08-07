@@ -86,7 +86,7 @@ function (algorithm::ConjugateFrankWolfe)(
         end
 
         τ, logs.upper_bound = one_dimensional_search(
-            link_performance, flow, Δflow_CFW,
+            traffic.link_performance, flow, Δflow_CFW,
             search_method=algorithm.search_method
         )
         if τ > 1 - tol
@@ -186,7 +186,7 @@ function (algorithm::BiconjugateFrankWolfe)(
 
         τ_pred = τ
         τ, logs.upper_bound = one_dimensional_search(
-            link_performance, flow, Δflow_BFW,
+            traffic.link_performance, flow, Δflow_BFW,
             search_method=algorithm.search_method
         )
         if τ > 1 - tol
