@@ -6,7 +6,8 @@ function (algorithm::RestrictedSimplicialDecomposition)(
 
     points = Array{Float64}(undef, n, 0) # W_s
     point = flow # W_x
-    weights = Vector{Float64}(undef, n) # β
+    isempty_point = false
+    weights = Float64[] # β
 
     logs = TrafficAssignLogs()
     if algorithm.trace
@@ -23,9 +24,10 @@ function (algorithm::RestrictedSimplicialDecomposition)(
         else
             points[:, argmin(weights)] = flow_end
             point = flow
+            isempty_point = false
         end
     
-        W = isnothing(point) ? points : [points point]
+        W = isempty_point ? points : [points point]
         r = size(W, 2)
     
         opt_model = Model()
@@ -49,15 +51,25 @@ function (algorithm::RestrictedSimplicialDecomposition)(
         optimize!(opt_model)
         weights = value.(β)
     
-        weights_points = isnothing(point) ? weights : weights[1:end-1]
-        points = points[:, weights_points.>algorithm.tol]
-    
-        if !isnothing(point) && last(weights) < algorithm.tol
-            point = nothing
-        end
-    
+        # update flow
         flow = W * weights
         logs.upper_bound = link_performance_objective(traffic.link_performance, flow)
+    
+        # update extreme points W_s
+        weights_points = isempty_point ? weights : weights[1:end-1]
+        loc_points = weights_points .> algorithm.tol
+        points = points[:, loc_points]
+        weights_points = weights_points[loc_points]
+    
+        # update an extreme point W_x
+        if !isempty_point && last(weights) < algorithm.tol
+            point = Float64[]
+            isempty_point = true
+        end
+
+        # update weights
+        weights = weights_points
+    
         update_objective!(logs)
         update_relative_gap!(logs)
         update_exec_time!(logs)
