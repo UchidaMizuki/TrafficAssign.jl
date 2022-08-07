@@ -68,20 +68,26 @@ Traffic(trips, network)
 By default, the `BiconjugateFrankWolfe()` algorithm is used.
 
 ```{julia}
-#| label: traffic-assignment
+#| label: simple-traffic-assignment
 
 res = assign_traffic(traffic)
 ```
 
 ```{julia}
-#| label: traffic-assignment-flow
+#| label: simple-traffic-assignment-flow
+#| eval: false
+
+# Get flow from traffic assignment results
 res.flow
 ```
 
 ```{julia}
-#| label: save-traffic-assignment-results
+#| label: save-simple-traffic-assignment-results
 #| echo: false
 #| output: false
+
+using DataFrames
+using CSV
 
 function frank_wolfe_results(res)
     traffic = res.traffic
@@ -103,12 +109,12 @@ end
 
 flow, logs = frank_wolfe_results(res)
 
-if !isdir("README_files/frank-wolfe-results/Anaheim")
-    mkpath("README_files/frank-wolfe-results/Anaheim")
+if !isdir("README_files/traffic-assignment-results/Anaheim")
+    mkpath("README_files/traffic-assignment-results/Anaheim")
 end
 
-CSV.write("README_files/frank-wolfe-results/Anaheim/flow.csv", flow)
-CSV.write("README_files/frank-wolfe-results/Anaheim/logs.csv", logs)
+CSV.write("README_files/traffic-assignment-results/Anaheim/flow.csv", flow)
+CSV.write("README_files/traffic-assignment-results/Anaheim/logs.csv", logs)
 ```
 
 ```{r}
@@ -122,7 +128,7 @@ library(sf)
 
 theme_set(theme_light())
 
-flow <- read_csv("README_files/frank-wolfe-results/Anaheim/flow.csv",
+flow <- read_csv("README_files/traffic-assignment-results/Anaheim/flow.csv",
                  col_types = cols(.default = "n"))
 
 network <- dir_ls(regexp = "^TransportationNetworks[^/]+/Anaheim/anaheim.geojson$", 
@@ -146,6 +152,7 @@ Now, the following algorithms are available.
 - `FrankWolfe()`
 - `ConjugateFrankWolfe()`
 - `BiconjugateFrankWolfe()`
+- `RestrictedSimplicialDecomposition()`
 
 ```{julia}
 #| label: compare-algorithms
@@ -157,28 +164,54 @@ traffic = load_tntp("GoldCoast")
 res_FW = assign_traffic(traffic, algorithm=FrankWolfe())
 res_CFW = assign_traffic(traffic, algorithm=ConjugateFrankWolfe())
 res_BFW = assign_traffic(traffic, algorithm=BiconjugateFrankWolfe())
+res_RSD_5 = assign_traffic(traffic, algorithm=RestrictedSimplicialDecomposition(max_points=5))
+# res_RSD_10 = assign_traffic(traffic, algorithm=RestrictedSimplicialDecomposition(max_points=10))
 ```
 
 ```{julia}
-#| label: save-frank-wolfe-results
+#| label: save-traffic-assignment-results
 #| eval: false
 #| echo: false
 
-if !isdir("README_files/frank-wolfe-results/GoldCoast")
-    mkpath("README_files/frank-wolfe-results/GoldCoast")
+using DataFrames
+using CSV
+
+if !isdir("README_files/traffic-assignment-results/GoldCoast")
+    mkpath("README_files/traffic-assignment-results/GoldCoast")
+end
+
+function frank_wolfe_results(res)
+    traffic = res.traffic
+    flow = DataFrame(
+        from=traffic.from,
+        to=traffic.to,
+        flow=res.flow
+    )
+
+    logs = res.logs
+    logs = DataFrame(
+        exec_time=logs.exec_time,
+        objective=logs.objective,
+        relative_gap=logs.relative_gap
+    )
+
+    return flow, logs
 end
 
 flow_FW, logs_FW = frank_wolfe_results(res_FW)
 flow_CFW, logs_CFW = frank_wolfe_results(res_CFW)
 flow_BFW, logs_BFW = frank_wolfe_results(res_BFW)
+flow_RSD_5, logs_RSD_5 = frank_wolfe_results(res_RSD_5)
 
-CSV.write("README_files/frank-wolfe-results/GoldCoast/flow_FW.csv", flow_FW)
-CSV.write("README_files/frank-wolfe-results/GoldCoast/flow_CFW.csv", flow_CFW)
-CSV.write("README_files/frank-wolfe-results/GoldCoast/flow_BFW.csv", flow_BFW)
+CSV.write("README_files/traffic-assignment-results/GoldCoast/flow_FW.csv", flow_FW)
+CSV.write("README_files/traffic-assignment-results/GoldCoast/flow_CFW.csv", flow_CFW)
+CSV.write("README_files/traffic-assignment-results/GoldCoast/flow_BFW.csv", flow_BFW)
+CSV.write("README_files/traffic-assignment-results/GoldCoast/flow_RSD_5.csv", flow_RSD_5)
 
-CSV.write("README_files/frank-wolfe-results/GoldCoast/logs_FW.csv", logs_FW)
-CSV.write("README_files/frank-wolfe-results/GoldCoast/logs_CFW.csv", logs_CFW)
-CSV.write("README_files/frank-wolfe-results/GoldCoast/logs_BFW.csv", logs_BFW)
+CSV.write("README_files/traffic-assignment-results/GoldCoast/logs_FW.csv", logs_FW)
+CSV.write("README_files/traffic-assignment-results/GoldCoast/logs_CFW.csv", logs_CFW)
+CSV.write("README_files/traffic-assignment-results/GoldCoast/logs_BFW.csv", logs_BFW)
+CSV.write("README_files/traffic-assignment-results/GoldCoast/logs_RSD_5.csv", logs_RSD_5)
 ```
 
 ```{julia}
@@ -186,13 +219,17 @@ CSV.write("README_files/frank-wolfe-results/GoldCoast/logs_BFW.csv", logs_BFW)
 #| echo: false
 #| output: false
 
-logs_FW = CSV.read("README_files/frank-wolfe-results/GoldCoast/logs_FW.csv", DataFrame)
-logs_CFW = CSV.read("README_files/frank-wolfe-results/GoldCoast/logs_CFW.csv", DataFrame)
-logs_BFW = CSV.read("README_files/frank-wolfe-results/GoldCoast/logs_BFW.csv", DataFrame)
+using CSV
+using DataFrames
+
+logs_FW = CSV.read("README_files/traffic-assignment-results/GoldCoast/logs_FW.csv", DataFrame)
+logs_CFW = CSV.read("README_files/traffic-assignment-results/GoldCoast/logs_CFW.csv", DataFrame)
+logs_BFW = CSV.read("README_files/traffic-assignment-results/GoldCoast/logs_BFW.csv", DataFrame)
+logs_RSD_5 = CSV.read("README_files/traffic-assignment-results/GoldCoast/logs_RSD_5.csv", DataFrame)
 ```
 
 ```{julia}
-#| label: make-a-plot-frank-wolfe-results
+#| label: make-a-plot-traffic-assignment-results
 #| echo: false
 #| output: false
 
@@ -202,7 +239,6 @@ plt = plot(
     1:nrow(logs_FW), logs_FW.relative_gap, 
     yaxis=:log,
     xlabel="Iteration",
-    # xlabel="Execution Time [sec]",
     ylabel="Relative Gap",
     label="Frank-Wolfe"
 )
@@ -211,13 +247,19 @@ plot!(
     label="Conjugate Frank-Wolfe"
 )
 plot!(
+    1:nrow(logs_RSD_5), logs_RSD_5.relative_gap, 
+    label="Restricted Simplicial Decomposition (max_points=5)"
+
+)
+plot!(
     1:nrow(logs_BFW), logs_BFW.relative_gap, 
     label="Biconjugate Frank-Wolfe"
+
 )
 ```
 
 ```{julia}
-#| label: plot-frank-wolfe-results
+#| label: plot-traffic-assignment-results
 #| echo: false
 
 plt
